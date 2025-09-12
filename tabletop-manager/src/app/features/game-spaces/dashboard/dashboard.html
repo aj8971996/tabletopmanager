@@ -1,1 +1,102 @@
-<p>dashboard works!</p>
+<div class="dashboard-container">
+  <!-- Top Navigation Bar -->
+  <mat-toolbar color="primary" class="dashboard-toolbar">
+    <span class="toolbar-title">Table Top Manager</span>
+    
+    <span class="toolbar-spacer"></span>
+    
+    @if (currentUser | async; as user) {
+      <button mat-icon-button [matMenuTriggerFor]="userMenu">
+        <mat-icon>account_circle</mat-icon>
+      </button>
+      
+      <mat-menu #userMenu="matMenu">
+        <div class="user-info">
+          <span class="user-email">{{ getUserDisplayName(user) }}</span>
+        </div>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="onSignOut()">
+          <mat-icon>logout</mat-icon>
+          <span>Sign Out</span>
+        </button>
+      </mat-menu>
+    }
+  </mat-toolbar>
+
+  <!-- Main Content -->
+  <div class="dashboard-content">
+    <div class="content-header">
+      <h1>Your Game Spaces</h1>
+      <button mat-raised-button color="accent" (click)="onCreateGameSpace()">
+        <mat-icon>add</mat-icon>
+        Create New Game Space
+      </button>
+    </div>
+
+    <!-- Game Spaces Grid -->
+    <div class="game-spaces-grid">
+      @if (gameSpaces().length === 0) {
+        <!-- Empty State -->
+        <div class="empty-state">
+          <mat-icon class="empty-icon">games</mat-icon>
+          <h2>No Game Spaces Yet</h2>
+          <p>Create your first game space to start building your tabletop campaign!</p>
+          <button mat-raised-button color="primary" (click)="onCreateGameSpace()">
+            <mat-icon>add</mat-icon>
+            Create Your First Game Space
+          </button>
+        </div>
+      } @else {
+        <!-- Game Space Cards -->
+        @for (gameSpace of gameSpaces(); track gameSpace.id) {
+          <mat-card class="game-space-card">
+            <mat-card-header>
+              <mat-card-title>{{ gameSpace.name }}</mat-card-title>
+              <mat-card-subtitle>
+                Created {{ gameSpace.created_at | date:'shortDate' }}
+              </mat-card-subtitle>
+              
+              <button mat-icon-button [matMenuTriggerFor]="cardMenu" class="card-menu">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              
+              <mat-menu #cardMenu="matMenu">
+                <button mat-menu-item (click)="onManageGameSpace(gameSpace)">
+                  <mat-icon>settings</mat-icon>
+                  <span>Manage</span>
+                </button>
+                <button mat-menu-item>
+                  <mat-icon>people</mat-icon>
+                  <span>Invite Players</span>
+                </button>
+                <button mat-menu-item>
+                  <mat-icon>delete</mat-icon>
+                  <span>Delete</span>
+                </button>
+              </mat-menu>
+            </mat-card-header>
+
+            <mat-card-content>
+              @if (gameSpace.description) {
+                <p class="game-space-description">{{ gameSpace.description }}</p>
+              } @else {
+                <p class="no-description">No description provided</p>
+              }
+            </mat-card-content>
+
+            <mat-card-actions>
+              <button mat-button color="primary" (click)="onSelectGameSpace(gameSpace)">
+                <mat-icon>play_arrow</mat-icon>
+                Enter Game Space
+              </button>
+              <button mat-button (click)="onManageGameSpace(gameSpace)">
+                <mat-icon>edit</mat-icon>
+                Manage
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        }
+      }
+    </div>
+  </div>
+</div>

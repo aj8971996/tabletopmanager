@@ -1,30 +1,37 @@
-// src/app/core/services/supabase.service.ts
 import { Injectable } from '@angular/core';
-import { 
-  createClient, 
-  SupabaseClient, 
-  AuthChangeEvent, 
-  AuthSession,
-  RealtimeChannel 
-} from '@supabase/supabase-js';
+import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import { environment } from '../../../enviornments/enviornment';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SupabaseService {
   private supabase: SupabaseClient;
-  private channels: Map<string, RealtimeChannel> = new Map();
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
+  public currentUser$ = this.currentUserSubject.asObservable();
 
   constructor() {
-    this.supabase = createClient(environment.supabase.url, environment.supabase.anonKey);
+    this.supabase = createClient(
+      environment.supabase.url,
+      environment.supabase.anonKey
+    );
+
+    // Initialize auth state
+    this.initializeAuth();
   }
 
-  get client() {
-    return this.supabase;
+  private async initializeAuth() {
+    const { data: { session } } = await this.supabase.auth.getSession();
+    this.currentUserSubject.next(session?.user ?? null);
+
+    // Listen for auth changes
+    this.supabase.auth.onAuthStateChange((_event, session) => {
+      this.currentUserSubject.next(session?.user ?? null);
+    });
   }
 
-  // Authentication methods
+  // Auth methods
   async signUp(email: string, password: string) {
     return await this.supabase.auth.signUp({ email, password });
   }
@@ -37,63 +44,12 @@ export class SupabaseService {
     return await this.supabase.auth.signOut();
   }
 
-  async getSession() {
-    const { data } = await this.supabase.auth.getSession();
-    return data.session;
+  // Database access
+  get client() {
+    return this.supabase;
   }
 
-  // Channel management following best practices
-  createChannel(topic: string, isPrivate = true): RealtimeChannel {
-    // Check if channel already exists to prevent duplicates
-    if (this.channels.has(topic)) {
-      return this.channels.get(topic)!;
-    }
-
-    const channel = this.supabase.channel(topic, {
-      config: {
-        broadcast: { self: true, ack: true },
-        presence: { key: 'user-session-id' },
-        private: isPrivate  // Following best practice of using private channels
-      }
-    });
-
-    this.channels.set(topic, channel);
-    return channel;
-  }
-
-  async subscribeToChannel(channel: RealtimeChannel): Promise<void> {
-    // Set auth before subscribing (required for private channels)
-    await this.supabase.realtime.setAuth();
-    
-    return new Promise((resolve, reject) => {
-      channel.subscribe((status, err) => {
-        switch (status) {
-          case 'SUBSCRIBED':
-            console.log('Connected to channel:', channel.topic);
-            resolve();
-            break;
-          case 'CHANNEL_ERROR':
-            console.error('Channel error:', err);
-            reject(err);
-            break;
-        }
-      });
-    });
-  }
-
-  removeChannel(topic: string): void {
-    const channel = this.channels.get(topic);
-    if (channel) {
-      this.supabase.removeChannel(channel);
-      this.channels.delete(topic);
-    }
-  }
-
-  // Clean up all channels (call this on app destroy)
-  cleanup(): void {
-    this.channels.forEach((channel, topic) => {
-      this.supabase.removeChannel(channel);
-    });
-    this.channels.clear();
+  get auth() {
+    return this.supabase.auth;
   }
 }
