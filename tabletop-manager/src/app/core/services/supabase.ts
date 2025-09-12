@@ -7,7 +7,7 @@ import {
   AuthSession,
   RealtimeChannel 
 } from '@supabase/supabase-js';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../../enviornments/enviornment';
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +17,7 @@ export class SupabaseService {
   private channels: Map<string, RealtimeChannel> = new Map();
 
   constructor() {
-    this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
+    this.supabase = createClient(environment.supabase.url, environment.supabase.anonKey);
   }
 
   get client() {
