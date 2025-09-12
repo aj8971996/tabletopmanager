@@ -1,1 +1,118 @@
-<p>login works!</p>
+<div class="login-container">
+  <div class="background-pattern"></div>
+  
+  <div class="login-content">
+    <!-- Logo/Brand Section -->
+    <div class="brand-section">
+      <div class="brand-icon">
+        <mat-icon>castle</mat-icon>
+      </div>
+      <h1 class="brand-title">TableTop Manager</h1>
+      <p class="brand-subtitle">Manage your tabletop campaigns with ease</p>
+    </div>
+
+    <!-- Login Card -->
+    <mat-card class="login-card">
+      <mat-card-header class="login-header">
+        <mat-card-title>Welcome Back</mat-card-title>
+        <mat-card-subtitle>Sign in to access your campaigns</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content class="login-body">
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Email Address</mat-label>
+            <input matInput type="email" formControlName="email" 
+                   [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+                   placeholder="your@email.com">
+            <mat-icon matPrefix>email</mat-icon>
+            @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
+              <mat-error>
+                @if (loginForm.get('email')?.errors?.['required']) {
+                  Email is required
+                }
+                @if (loginForm.get('email')?.errors?.['email']) {
+                  Please enter a valid email address
+                }
+              </mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Password</mat-label>
+            <input matInput [type]="hidePassword() ? 'password' : 'text'" 
+                   formControlName="password"
+                   [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+                   placeholder="Enter your password">
+            <mat-icon matPrefix>lock</mat-icon>
+            <button mat-icon-button matSuffix type="button" 
+                    (click)="togglePasswordVisibility()" 
+                    [attr.aria-label]="'Hide password'" 
+                    [attr.aria-pressed]="hidePassword()">
+              <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+              <mat-error>
+                @if (loginForm.get('password')?.errors?.['required']) {
+                  Password is required
+                }
+                @if (loginForm.get('password')?.errors?.['minlength']) {
+                  Password must be at least 6 characters
+                }
+              </mat-error>
+            }
+          </mat-form-field>
+
+          @if (errorMessage()) {
+            <div class="error-banner">
+              <mat-icon>error</mat-icon>
+              <span>{{ errorMessage() }}</span>
+            </div>
+          }
+
+          <div class="form-actions">
+            <button mat-raised-button color="primary" type="submit" 
+                    class="login-button"
+                    [disabled]="loginForm.invalid || isLoading()">
+              @if (isLoading()) {
+                <ng-container>
+                  <mat-spinner diameter="18" class="spinner"></mat-spinner>
+                  <span>Signing In...</span>
+                </ng-container>
+              } @else {
+                <ng-container>
+                  <mat-icon>login</mat-icon>
+                  <span>Sign In</span>
+                </ng-container>
+              }
+            </button>
+
+            <div class="form-links">
+              <button mat-button type="button" class="secondary-button">
+                Forgot Password?
+              </button>
+            </div>
+          </div>
+        </form>
+      </mat-card-content>
+
+      <mat-card-actions class="login-footer">
+        <div class="register-prompt">
+          <span>Don't have an account?</span>
+          <button mat-button color="primary" (click)="goToRegister()" class="link-button">
+            Create Account
+          </button>
+        </div>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Demo/Skip Section -->
+    <div class="demo-section">
+      <p class="demo-text">Testing the application?</p>
+      <button mat-stroked-button (click)="skipToDashboard()" class="demo-button">
+        <mat-icon>preview</mat-icon>
+        Skip to Dashboard
+      </button>
+    </div>
+  </div>
+</div>

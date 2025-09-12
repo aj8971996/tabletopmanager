@@ -17,7 +17,6 @@ export class SupabaseService {
       environment.supabase.anonKey
     );
 
-    // Initialize auth state
     this.initializeAuth();
   }
 
@@ -25,13 +24,11 @@ export class SupabaseService {
     const { data: { session } } = await this.supabase.auth.getSession();
     this.currentUserSubject.next(session?.user ?? null);
 
-    // Listen for auth changes
     this.supabase.auth.onAuthStateChange((_event, session) => {
       this.currentUserSubject.next(session?.user ?? null);
     });
   }
 
-  // Auth methods
   async signUp(email: string, password: string) {
     return await this.supabase.auth.signUp({ email, password });
   }
@@ -44,7 +41,6 @@ export class SupabaseService {
     return await this.supabase.auth.signOut();
   }
 
-  // Database access
   get client() {
     return this.supabase;
   }

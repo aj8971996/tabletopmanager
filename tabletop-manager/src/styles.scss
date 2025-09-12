@@ -1,1 +1,101 @@
-/* You can add global styles to this file, and also import other style files */
+// If the Material theming still causes issues, use this simplified version
+// Import a pre-built Material theme
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+// CSS Custom Properties for theming
+:root {
+  // Primary colors (autumn orange theme)
+  --color-primary: #dc7633;
+  --color-primary-light: #e39555;
+  --color-primary-dark: #ca5d28;
+  --color-primary-contrast: #ffffff;
+
+  // Accent colors (brown)
+  --color-accent: #a67c52;
+  --color-accent-light: #b8916b;
+  --color-accent-dark: #8e6a47;
+  --color-accent-contrast: #ffffff;
+
+  // Neutral colors
+  --color-background: #fdf8f3;
+  --color-surface: #ffffff;
+  --color-surface-variant: #f9ecdb;
+  --color-on-surface: #2c1810;
+  --color-on-surface-variant: #5c4230;
+
+  // Border colors
+  --color-border: #dcc7b5;
+  --color-border-light: #ede1d6;
+  --color-divider: #e8d5c4;
+
+  // Status colors
+  --color-success: #4caf50;
+  --color-warning: #ff9800;
+  --color-error: #f44336;
+  --color-info: #2196f3;
+
+  // Shadows
+  --shadow-light: 0 2px 4px rgba(44, 24, 16, 0.08);
+  --shadow-medium: 0 4px 12px rgba(44, 24, 16, 0.12);
+  --shadow-heavy: 0 8px 24px rgba(44, 24, 16, 0.16);
+
+  // Typography
+  --font-family: 'Inter', 'Roboto', 'Helvetica Neue', sans-serif;
+
+  // Spacing system
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-base: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 2.5rem;
+  --spacing-3xl: 3rem;
+
+  // Border radius
+  --border-radius-sm: 0.25rem;
+  --border-radius-base: 0.5rem;
+  --border-radius-lg: 0.75rem;
+  --border-radius-xl: 1rem;
+}
+
+// Global base styles
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  line-height: 1.6;
+}
+
+// Utility classes
+.text-center { text-align: center; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.rounded { border-radius: var(--border-radius-base); }
+.rounded-lg { border-radius: var(--border-radius-lg); }
+.shadow-medium { box-shadow: var(--shadow-medium); }
+
+// Override some Material Design colors to match our autumn theme
+.mat-mdc-raised-button.mat-primary {
+  background-color: var(--color-primary) !important;
+  color: var(--color-primary-contrast) !important;
+}
+
+.mat-mdc-outlined-button.mat-primary {
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary) !important;
+}
+
+.mdc-text-field--focused .mdc-text-field__input {
+  caret-color: var(--color-primary) !important;
+}
+
+.mat-mdc-form-field.mat-focused .mat-mdc-select-arrow {
+  color: var(--color-primary) !important;
+}
