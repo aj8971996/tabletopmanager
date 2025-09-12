@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -26,6 +26,7 @@ function passwordMatchValidator(control: AbstractControl) {
   selector: 'app-register',
   templateUrl: './register.html',
   styleUrls: ['./register.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     ReactiveFormsModule,
@@ -63,14 +64,22 @@ export class RegisterComponent {
       this.errorMessage.set('');
 
       try {
+        // Simulate registration delay
         await new Promise(resolve => setTimeout(resolve, 1500));
         
         console.log('Registration attempted with:', {
           email: this.registerForm.value.email,
+          acceptedTerms: this.registerForm.value.acceptTerms
           // Don't log password in production
         });
         
-        this.router.navigate(['/login']);
+        // Simulate success and redirect to login
+        this.router.navigate(['/login'], { 
+          queryParams: { 
+            registered: 'true',
+            email: this.registerForm.value.email 
+          }
+        });
       } catch (error) {
         this.errorMessage.set('Registration failed. Please try again.');
       } finally {

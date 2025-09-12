@@ -24,7 +24,8 @@
             <mat-label>Email Address</mat-label>
             <input matInput type="email" formControlName="email" 
                    [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-                   placeholder="your@email.com">
+                   placeholder="your@email.com"
+                   autocomplete="email">
             <mat-icon matPrefix>email</mat-icon>
             @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
               <mat-error>
@@ -43,12 +44,13 @@
             <input matInput [type]="hidePassword() ? 'password' : 'text'" 
                    formControlName="password"
                    [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-                   placeholder="Enter your password">
+                   placeholder="Enter your password"
+                   autocomplete="current-password">
             <mat-icon matPrefix>lock</mat-icon>
             <button mat-icon-button matSuffix type="button" 
                     (click)="togglePasswordVisibility()" 
-                    [attr.aria-label]="'Hide password'" 
-                    [attr.aria-pressed]="hidePassword()">
+                    [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'" 
+                    [attr.aria-pressed]="!hidePassword()">
               <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
             @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
@@ -75,15 +77,15 @@
                     class="login-button"
                     [disabled]="loginForm.invalid || isLoading()">
               @if (isLoading()) {
-                <ng-container>
-                  <mat-spinner diameter="18" class="spinner"></mat-spinner>
+                <div class="loading-content">
+                  <mat-spinner diameter="18"></mat-spinner>
                   <span>Signing In...</span>
-                </ng-container>
+                </div>
               } @else {
-                <ng-container>
+                <div class="normal-content">
                   <mat-icon>login</mat-icon>
                   <span>Sign In</span>
-                </ng-container>
+                </div>
               }
             </button>
 
@@ -111,7 +113,7 @@
       <p class="demo-text">Testing the application?</p>
       <button mat-stroked-button (click)="skipToDashboard()" class="demo-button">
         <mat-icon>preview</mat-icon>
-        Skip to Dashboard
+        <span>Skip to Dashboard</span>
       </button>
     </div>
   </div>

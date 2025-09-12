@@ -29,7 +29,7 @@
       <h1>Your Game Spaces</h1>
       <button mat-raised-button color="accent" (click)="onCreateGameSpace()">
         <mat-icon>add</mat-icon>
-        Create New Game Space
+        <span>Create New Game Space</span>
       </button>
     </div>
 
@@ -43,7 +43,7 @@
           <p>Create your first game space to start building your tabletop campaign!</p>
           <button mat-raised-button color="primary" (click)="onCreateGameSpace()">
             <mat-icon>add</mat-icon>
-            Create Your First Game Space
+            <span>Create Your First Game Space</span>
           </button>
         </div>
       } @else {
@@ -87,11 +87,11 @@
             <mat-card-actions>
               <button mat-button color="primary" (click)="onSelectGameSpace(gameSpace)">
                 <mat-icon>play_arrow</mat-icon>
-                Enter Game Space
+                <span>Enter Game Space</span>
               </button>
               <button mat-button (click)="onManageGameSpace(gameSpace)">
                 <mat-icon>edit</mat-icon>
-                Manage
+                <span>Manage</span>
               </button>
             </mat-card-actions>
           </mat-card>

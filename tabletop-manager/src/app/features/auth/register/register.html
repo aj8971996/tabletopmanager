@@ -1,1 +1,155 @@
-<p>register works!</p>
+<div class="register-container">
+  <div class="background-pattern"></div>
+  
+  <div class="register-content">
+    <!-- Logo/Brand Section -->
+    <div class="brand-section">
+      <div class="brand-icon">
+        <mat-icon>castle</mat-icon>
+      </div>
+      <h1 class="brand-title">TableTop Manager</h1>
+      <p class="brand-subtitle">Join thousands of game masters worldwide</p>
+    </div>
+
+    <!-- Register Card -->
+    <mat-card class="register-card">
+      <mat-card-header class="register-header">
+        <mat-card-title>Create Account</mat-card-title>
+        <mat-card-subtitle>Start managing your campaigns today</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content class="register-body">
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Email Address</mat-label>
+            <input matInput type="email" formControlName="email" 
+                   [class.error]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
+                   placeholder="your@email.com"
+                   autocomplete="email">
+            <mat-icon matPrefix>email</mat-icon>
+            @if (registerForm.get('email')?.invalid && registerForm.get('email')?.touched) {
+              <mat-error>
+                @if (registerForm.get('email')?.errors?.['required']) {
+                  Email is required
+                }
+                @if (registerForm.get('email')?.errors?.['email']) {
+                  Please enter a valid email address
+                }
+              </mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Password</mat-label>
+            <input matInput [type]="hidePassword() ? 'password' : 'text'" 
+                   formControlName="password"
+                   [class.error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
+                   placeholder="Enter your password"
+                   autocomplete="new-password">
+            <mat-icon matPrefix>lock</mat-icon>
+            <button mat-icon-button matSuffix type="button" 
+                    (click)="togglePasswordVisibility()" 
+                    [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'" 
+                    [attr.aria-pressed]="!hidePassword()">
+              <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
+              <mat-error>
+                @if (registerForm.get('password')?.errors?.['required']) {
+                  Password is required
+                }
+                @if (registerForm.get('password')?.errors?.['minlength']) {
+                  Password must be at least 8 characters
+                }
+              </mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Confirm Password</mat-label>
+            <input matInput [type]="hideConfirmPassword() ? 'password' : 'text'" 
+                   formControlName="confirmPassword"
+                   [class.error]="(registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched) || (registerForm.errors?.['passwordMismatch'] && registerForm.get('confirmPassword')?.touched)"
+                   placeholder="Confirm your password"
+                   autocomplete="new-password">
+            <mat-icon matPrefix>lock_outline</mat-icon>
+            <button mat-icon-button matSuffix type="button" 
+                    (click)="toggleConfirmPasswordVisibility()" 
+                    [attr.aria-label]="hideConfirmPassword() ? 'Show password' : 'Hide password'" 
+                    [attr.aria-pressed]="!hideConfirmPassword()">
+              <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched) {
+              <mat-error>
+                @if (registerForm.get('confirmPassword')?.errors?.['required']) {
+                  Please confirm your password
+                }
+              </mat-error>
+            }
+            @if (registerForm.errors?.['passwordMismatch'] && registerForm.get('confirmPassword')?.touched) {
+              <mat-error>
+                Passwords do not match
+              </mat-error>
+            }
+          </mat-form-field>
+
+          <div class="terms-checkbox">
+            <mat-checkbox formControlName="acceptTerms" color="primary">
+              <span class="terms-text">
+                I agree to the 
+                <button mat-button type="button" class="terms-link">Terms of Service</button>
+                and 
+                <button mat-button type="button" class="terms-link">Privacy Policy</button>
+              </span>
+            </mat-checkbox>
+            @if (registerForm.get('acceptTerms')?.invalid && registerForm.get('acceptTerms')?.touched) {
+              <mat-error class="terms-error">
+                You must accept the terms and conditions
+              </mat-error>
+            }
+          </div>
+
+          @if (errorMessage()) {
+            <div class="error-banner">
+              <mat-icon>error</mat-icon>
+              <span>{{ errorMessage() }}</span>
+            </div>
+          }
+
+          <div class="form-actions">
+            <button mat-raised-button color="primary" type="submit" 
+                    class="register-button"
+                    [disabled]="registerForm.invalid || isLoading()">
+              @if (isLoading()) {
+                <div class="loading-content">
+                  <mat-spinner diameter="18"></mat-spinner>
+                  <span>Creating Account...</span>
+                </div>
+              } @else {
+                <div class="normal-content">
+                  <mat-icon>person_add</mat-icon>
+                  <span>Create Account</span>
+                </div>
+              }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+
+      <mat-card-actions class="register-footer">
+        <div class="login-prompt">
+          <span>Already have an account?</span>
+          <button mat-button color="primary" (click)="goToLogin()" class="link-button">
+            Sign In
+          </button>
+        </div>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Security Note -->
+    <div class="security-note">
+      <mat-icon>security</mat-icon>
+      <p>Your information is secure and encrypted. We never share your data with third parties.</p>
+    </div>
+  </div>
+</div>

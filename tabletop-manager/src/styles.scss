@@ -1,6 +1,6 @@
-// If the Material theming still causes issues, use this simplified version
-// Import a pre-built Material theme
+// Import Google Fonts and Material Icons
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
 // CSS Custom Properties for theming
 :root {
@@ -40,7 +40,14 @@
   --shadow-heavy: 0 8px 24px rgba(44, 24, 16, 0.16);
 
   // Typography
-  --font-family: 'Inter', 'Roboto', 'Helvetica Neue', sans-serif;
+  --font-family: 'Inter', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
 
   // Spacing system
   --spacing-xs: 0.25rem;
@@ -71,6 +78,87 @@ html, body {
   background-color: var(--color-background);
   color: var(--color-on-surface);
   line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Fix for icon and text alignment in buttons
+.mat-mdc-button, 
+.mat-mdc-raised-button, 
+.mat-mdc-outlined-button,
+.mat-mdc-unelevated-button {
+  .mat-button-wrapper,
+  .mdc-button__label {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    line-height: 1.2 !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  .mat-icon, mat-icon {
+    margin: 0 !important;
+    line-height: 1 !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    font-size: 1.25rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  // Fix for spinner in loading buttons
+  .mat-spinner {
+    margin: 0 !important;
+  }
+
+  &.mat-icon-button {
+    .mat-icon, mat-icon {
+      width: 1.5rem !important;
+      height: 1.5rem !important;
+      font-size: 1.5rem !important;
+    }
+  }
+}
+
+// Ensure Material Icons load properly
+.material-icons {
+  font-family: 'Material Icons' !important;
+  font-weight: normal !important;
+  font-style: normal !important;
+  font-size: 1.25rem !important;
+  line-height: 1 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  display: inline-block !important;
+  white-space: nowrap !important;
+  word-wrap: normal !important;
+  direction: ltr !important;
+  -webkit-font-smoothing: antialiased !important;
+  text-rendering: optimizeLegibility !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  font-feature-settings: 'liga' !important;
+}
+
+// Fix mat-icon specifically
+mat-icon {
+  font-family: 'Material Icons' !important;
+  font-weight: normal !important;
+  font-style: normal !important;
+  line-height: 1 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  word-wrap: normal !important;
+  direction: ltr !important;
+  -webkit-font-smoothing: antialiased !important;
+  text-rendering: optimizeLegibility !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  font-feature-settings: 'liga' !important;
 }
 
 // Utility classes
@@ -81,14 +169,23 @@ html, body {
 .rounded-lg { border-radius: var(--border-radius-lg); }
 .shadow-medium { box-shadow: var(--shadow-medium); }
 
-// Override some Material Design colors to match our autumn theme
+// Override Material Design colors to match our autumn theme
 .mat-mdc-raised-button.mat-primary {
+  --mdc-protected-button-container-color: var(--color-primary) !important;
+  --mdc-protected-button-label-text-color: var(--color-primary-contrast) !important;
   background-color: var(--color-primary) !important;
   color: var(--color-primary-contrast) !important;
 }
 
 .mat-mdc-outlined-button.mat-primary {
+  --mdc-outlined-button-outline-color: var(--color-primary) !important;
+  --mdc-outlined-button-label-text-color: var(--color-primary) !important;
   border-color: var(--color-primary) !important;
+  color: var(--color-primary) !important;
+}
+
+.mat-mdc-button.mat-primary {
+  --mdc-text-button-label-text-color: var(--color-primary) !important;
   color: var(--color-primary) !important;
 }
 
@@ -96,6 +193,34 @@ html, body {
   caret-color: var(--color-primary) !important;
 }
 
-.mat-mdc-form-field.mat-focused .mat-mdc-select-arrow {
-  color: var(--color-primary) !important;
+.mat-mdc-form-field.mat-focused {
+  .mat-mdc-select-arrow {
+    color: var(--color-primary) !important;
+  }
+  
+  .mdc-text-field--focused .mdc-floating-label {
+    color: var(--color-primary) !important;
+  }
+  
+  .mdc-text-field--focused .mdc-line-ripple::before {
+    border-bottom-color: var(--color-primary) !important;
+  }
+}
+
+// Fix form field icons
+.mat-mdc-form-field {
+  .mat-mdc-form-field-icon-prefix,
+  .mat-mdc-form-field-icon-suffix {
+    mat-icon {
+      width: 1.25rem !important;
+      height: 1.25rem !important;
+      font-size: 1.25rem !important;
+    }
+  }
+}
+
+// Toolbar styling
+.mat-toolbar.mat-primary {
+  background-color: var(--color-primary) !important;
+  color: var(--color-primary-contrast) !important;
 }

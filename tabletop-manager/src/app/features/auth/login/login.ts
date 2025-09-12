@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -13,6 +13,7 @@ import { Router } from '@angular/router';
   selector: 'app-login',
   templateUrl: './login.html',
   styleUrls: ['./login.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     ReactiveFormsModule,
@@ -49,7 +50,11 @@ export class LoginComponent {
         // Simulate login delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        console.log('Login attempted with:', this.loginForm.value);
+        console.log('Login attempted with:', {
+          email: this.loginForm.value.email
+          // Don't log password in production
+        });
+        
         this.router.navigate(['/dashboard']);
       } catch (error) {
         this.errorMessage.set('Login failed. Please try again.');
