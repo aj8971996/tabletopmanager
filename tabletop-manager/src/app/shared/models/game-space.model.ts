@@ -28,3 +28,55 @@ export interface CreateGameSpaceRequest {
   name: string;
   description?: string;
 }
+
+// Game Space Options interface
+export interface GameSpaceOption {
+  id: string;
+  game_space_id: string;
+  option_key: string;
+  option_value: string;
+  option_type: 'boolean' | 'formula' | 'dice_rule' | 'number' | 'text';
+  description?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateGameSpaceOptionRequest {
+  option_key: string;
+  option_value: string;
+  option_type?: 'boolean' | 'formula' | 'dice_rule' | 'number' | 'text';
+  description?: string;
+  is_active?: boolean;
+}
+
+// Game Session interface
+export interface GameSession {
+  id: string;
+  game_space_id: string;
+  name: string;
+  status: 'planning' | 'active' | 'completed';
+  participants: string[];
+  session_data: Record<string, any>;
+  started_at?: string;
+  ended_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateGameSessionRequest {
+  name: string;
+  status?: 'planning' | 'active' | 'completed';
+  participants?: string[];
+  session_data?: Record<string, any>;
+  started_at?: string;
+}
+
+export interface UpdateGameSessionRequest {
+  name?: string;
+  status?: 'planning' | 'active' | 'completed';
+  participants?: string[];
+  session_data?: Record<string, any>;
+  started_at?: string;
+  ended_at?: string;
+}
