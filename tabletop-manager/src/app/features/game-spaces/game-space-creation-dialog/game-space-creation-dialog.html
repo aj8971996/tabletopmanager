@@ -1,0 +1,207 @@
+<div class="dialog-container">
+  <div class="dialog-header">
+    <h2 mat-dialog-title>Create New Game Space</h2>
+    <button mat-icon-button mat-dialog-close class="close-button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div mat-dialog-content class="dialog-content">
+    <mat-horizontal-stepper #stepper class="creation-stepper">
+      
+      <!-- Step 1: Basic Information -->
+      <mat-step [stepControl]="basicInfoForm" label="Basic Information">
+        <div class="step-content">
+          <p class="step-description">
+            Set up the basic details for your new game space.
+          </p>
+
+          <form [formGroup]="basicInfoForm" class="basic-info-form">
+            <mat-form-field appearance="fill" class="full-width">
+              <mat-label>Game Space Name</mat-label>
+              <input matInput 
+                     formControlName="name" 
+                     placeholder="e.g., The Lost Mines of Phandelver"
+                     maxlength="100">
+              <mat-hint>A descriptive name for your campaign or game</mat-hint>
+              @if (getFieldError('name')) {
+                <mat-error>{{ getFieldError('name') }}</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="full-width">
+              <mat-label>Description (Optional)</mat-label>
+              <textarea matInput 
+                        formControlName="description"
+                        placeholder="Brief description of your game world, campaign, or setting..."
+                        rows="3"
+                        maxlength="500"></textarea>
+              <mat-hint>Help players understand what this game is about</mat-hint>
+            </mat-form-field>
+          </form>
+
+          <div class="step-actions">
+            <button mat-raised-button 
+                    color="primary" 
+                    matStepperNext
+                    [disabled]="basicInfoForm.invalid">
+              Next: Choose System
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </div>
+      </mat-step>
+
+      <!-- Step 2: Game System Template -->
+      <mat-step label="Game System">
+        <div class="step-content">
+          <p class="step-description">
+            Choose a game system template to get started, or build a custom system from scratch.
+          </p>
+
+          <div class="template-grid">
+            @for (template of gameSystemTemplates; track template.id) {
+              <mat-card class="template-card" 
+                        [class.selected]="selectedTemplate.id === template.id"
+                        (click)="onTemplateSelect(template)">
+                
+                <mat-card-header>
+                  <mat-card-title>{{ template.name }}</mat-card-title>
+                  @if (selectedTemplate.id === template.id) {
+                    <mat-icon class="selected-icon">check_circle</mat-icon>
+                  }
+                </mat-card-header>
+
+                <mat-card-content>
+                  <p>{{ template.description }}</p>
+                  
+                  @if (template.defaultAttributes.length > 0) {
+                    <div class="template-preview">
+                      <span class="preview-label">Attributes:</span>
+                      <mat-chip-listbox class="attribute-chips">
+                        @for (attr of template.defaultAttributes.slice(0, 3); track attr.name) {
+                          <mat-chip-option>{{ attr.label }}</mat-chip-option>
+                        }
+                        @if (template.defaultAttributes.length > 3) {
+                          <mat-chip-option class="more-chip">
+                            +{{ template.defaultAttributes.length - 3 }} more
+                          </mat-chip-option>
+                        }
+                      </mat-chip-listbox>
+                    </div>
+                  }
+                  
+                  @if (template.defaultOptions.length > 0) {
+                    <div class="template-preview">
+                      <span class="preview-label">Features:</span>
+                      <mat-chip-listbox class="feature-chips">
+                        @for (option of template.defaultOptions.slice(0, 2); track option.key) {
+                          <mat-chip-option>{{ formatOptionKey(option.key) }}</mat-chip-option>
+                        }
+                        @if (template.defaultOptions.length > 2) {
+                          <mat-chip-option class="more-chip">
+                            +{{ template.defaultOptions.length - 2 }} more
+                          </mat-chip-option>
+                        }
+                      </mat-chip-listbox>
+                    </div>
+                  }
+                </mat-card-content>
+              </mat-card>
+            }
+          </div>
+
+          <div class="step-actions">
+            <button mat-button matStepperPrevious>
+              <mat-icon>arrow_back</mat-icon>
+              Back
+            </button>
+            <button mat-raised-button 
+                    color="primary" 
+                    matStepperNext>
+              Next: Configure Settings
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </div>
+      </mat-step>
+
+      <!-- Step 3: Initial Settings -->
+      <mat-step label="Initial Settings">
+        <div class="step-content">
+          <p class="step-description">
+            Configure initial settings for your game space. You can modify these later.
+          </p>
+
+          @if (selectedTemplate.defaultOptions.length > 0) {
+            <div class="settings-section">
+              <h3>{{ selectedTemplate.name }} Default Settings</h3>
+              <div class="settings-list">
+                @for (option of selectedTemplate.defaultOptions; track option.key) {
+                  <div class="setting-item">
+                    <div class="setting-info">
+                      <span class="setting-name">{{ formatOptionKey(option.key) }}</span>
+                      <span class="setting-description">{{ option.description }}</span>
+                    </div>
+                    <div class="setting-value">
+                      @switch (option.type) {
+                        @case ('boolean') {
+                          <mat-icon class="setting-status">{{ option.value === 'true' ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+                        }
+                        @default {
+                          <span class="setting-text">{{ option.value }}</span>
+                        }
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @if (selectedTemplate.id === 'custom') {
+            <div class="settings-section">
+              <h3>Custom System</h3>
+              <p class="custom-message">
+                You can set up attributes and rules after creating your game space.
+                Visit the Admin Panel to configure your custom system.
+              </p>
+            </div>
+          }
+
+          <div class="step-actions">
+            <button mat-button matStepperPrevious>
+              <mat-icon>arrow_back</mat-icon>
+              Back
+            </button>
+            <button mat-raised-button 
+                    color="primary" 
+                    (click)="onCreate()"
+                    [disabled]="isCreating()">
+              <ng-container>
+                @if (isCreating()) {
+                  <mat-icon class="spinning">hourglass_empty</mat-icon>
+                } @else {
+                  <mat-icon>add</mat-icon>
+                }
+              </ng-container>
+              <span>
+                @if (isCreating()) {
+                  Creating...
+                } @else {
+                  Create Game Space
+                }
+              </span>
+            </button>
+          </div>
+        </div>
+      </mat-step>
+
+    </mat-horizontal-stepper>
+  </div>
+
+  <!-- Dialog Actions (if needed for mobile or alternate layout) -->
+  <div mat-dialog-actions class="dialog-actions mobile-only">
+    <button mat-button (click)="onCancel()">Cancel</button>
+  </div>
+</div>

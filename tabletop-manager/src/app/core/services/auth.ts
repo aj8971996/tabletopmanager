@@ -18,6 +18,7 @@ export class AuthService {
   public currentUser = computed(() => this.currentUserSignal());
   public isAuthenticated = computed(() => !!this.currentUserSignal());
   public isLoading = computed(() => this.loadingSignal());
+    currentUser$: any;
 
   constructor() {
     this.initializeAuth();

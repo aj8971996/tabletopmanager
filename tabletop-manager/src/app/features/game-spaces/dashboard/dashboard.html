@@ -54,6 +54,9 @@
               <mat-card-title>{{ gameSpace.name }}</mat-card-title>
               <mat-card-subtitle>
                 Created {{ gameSpace.created_at | date:'shortDate' }}
+                @if (gameSpace.member_count !== undefined) {
+                  · {{ gameSpace.member_count }} member{{ gameSpace.member_count === 1 ? '' : 's' }}
+                }
               </mat-card-subtitle>
               
               <button mat-icon-button [matMenuTriggerFor]="cardMenu" class="card-menu">
@@ -61,15 +64,21 @@
               </button>
               
               <mat-menu #cardMenu="matMenu">
+                <button mat-menu-item (click)="onSelectGameSpace(gameSpace)">
+                  <mat-icon>play_arrow</mat-icon>
+                  <span>Enter Game Space</span>
+                </button>
                 <button mat-menu-item (click)="onManageGameSpace(gameSpace)">
                   <mat-icon>settings</mat-icon>
-                  <span>Manage</span>
+                  <span>Admin Panel</span>
                 </button>
-                <button mat-menu-item>
-                  <mat-icon>people</mat-icon>
+                <mat-divider></mat-divider>
+                <button mat-menu-item (click)="onInvitePlayers(gameSpace)">
+                  <mat-icon>person_add</mat-icon>
                   <span>Invite Players</span>
                 </button>
-                <button mat-menu-item>
+                <mat-divider></mat-divider>
+                <button mat-menu-item (click)="onDeleteGameSpace(gameSpace)" class="danger-action">
                   <mat-icon>delete</mat-icon>
                   <span>Delete</span>
                 </button>
@@ -90,8 +99,8 @@
                 <span>Enter Game Space</span>
               </button>
               <button mat-button (click)="onManageGameSpace(gameSpace)">
-                <mat-icon>edit</mat-icon>
-                <span>Manage</span>
+                <mat-icon>settings</mat-icon>
+                <span>Admin Panel</span>
               </button>
             </mat-card-actions>
           </mat-card>

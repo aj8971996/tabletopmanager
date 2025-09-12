@@ -1,4 +1,4 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth';
 
 @Component({
   selector: 'app-login',
@@ -26,15 +27,15 @@ import { Router } from '@angular/router';
   ]
 })
 export class LoginComponent {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  
   loginForm: FormGroup;
   isLoading = signal(false);
   errorMessage = signal('');
   hidePassword = signal(true);
 
-  constructor(
-    private fb: FormBuilder,
-    private router: Router
-  ) {
+  constructor(private fb: FormBuilder) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
@@ -47,17 +48,21 @@ export class LoginComponent {
       this.errorMessage.set('');
 
       try {
-        // Simulate login delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const { email, password } = this.loginForm.value;
         
-        console.log('Login attempted with:', {
-          email: this.loginForm.value.email
-          // Don't log password in production
-        });
+        // Call the real AuthService
+        const result = await this.authService.signIn(email, password);
         
-        this.router.navigate(['/dashboard']);
+        if (result.success) {
+          // AuthService already handles navigation to dashboard
+          // No need to navigate here
+          console.log('Login successful');
+        } else {
+          this.errorMessage.set(result.error || 'Login failed. Please try again.');
+        }
       } catch (error) {
-        this.errorMessage.set('Login failed. Please try again.');
+        console.error('Login error:', error);
+        this.errorMessage.set('An unexpected error occurred. Please try again.');
       } finally {
         this.isLoading.set(false);
       }
@@ -73,6 +78,7 @@ export class LoginComponent {
   }
 
   skipToDashboard() {
+    // For testing only - remove in production
     this.router.navigate(['/dashboard']);
   }
 }

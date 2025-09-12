@@ -227,6 +227,19 @@
   span {
     line-height: 1.4;
   }
+
+  // Danger actions styling
+  &.danger-action {
+    color: var(--color-error) !important;
+
+    mat-icon {
+      color: var(--color-error) !important;
+    }
+
+    &:hover {
+      background-color: rgba(244, 67, 54, 0.08) !important;
+    }
+  }
 }
 
 // Empty State Styles
@@ -283,6 +296,59 @@
       font-size: 1.25rem !important;
       line-height: 1 !important;
       margin: 0 !important;
+    }
+  }
+}
+
+// Snackbar styling overrides
+:host ::ng-deep {
+  .success-snackbar {
+    background-color: var(--color-success) !important;
+    color: white !important;
+    
+    .mdc-snackbar__label {
+      color: white !important;
+    }
+    
+    .mat-mdc-snack-bar-action {
+      color: white !important;
+      font-weight: 600 !important;
+    }
+  }
+
+  .error-snackbar {
+    background-color: var(--color-error) !important;
+    color: white !important;
+    
+    .mdc-snackbar__label {
+      color: white !important;
+    }
+    
+    .mat-mdc-snack-bar-action {
+      color: white !important;
+      font-weight: 600 !important;
+    }
+  }
+
+  .info-snackbar {
+    background-color: var(--color-info) !important;
+    color: white !important;
+    
+    .mdc-snackbar__label {
+      color: white !important;
+    }
+    
+    .mat-mdc-snack-bar-action {
+      color: white !important;
+      font-weight: 600 !important;
+    }
+  }
+
+  // Dialog styling
+  .game-space-creation-dialog {
+    .mat-mdc-dialog-container {
+      border-radius: var(--border-radius-lg) !important;
+      overflow: hidden;
     }
   }
 }

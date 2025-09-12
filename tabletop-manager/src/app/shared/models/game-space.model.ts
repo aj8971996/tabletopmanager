@@ -80,3 +80,23 @@ export interface UpdateGameSessionRequest {
   started_at?: string;
   ended_at?: string;
 }
+
+export interface CreateGameSpaceOptionRequest {
+  option_key: string;
+  option_value: string;
+  option_type?: 'boolean' | 'formula' | 'dice_rule' | 'number' | 'text';
+  description?: string;
+  is_active?: boolean;
+}
+
+export interface GameSpaceOption {
+  id: string;
+  game_space_id: string;
+  option_key: string;
+  option_value: string;
+  option_type: 'boolean' | 'formula' | 'dice_rule' | 'number' | 'text';
+  description?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}

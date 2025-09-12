@@ -1,4 +1,4 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -8,7 +8,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth';
 
 // Custom validator for password confirmation
 function passwordMatchValidator(control: AbstractControl) {
@@ -40,16 +42,17 @@ function passwordMatchValidator(control: AbstractControl) {
   ]
 })
 export class RegisterComponent {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private snackBar = inject(MatSnackBar);
+  
   registerForm: FormGroup;
   isLoading = signal(false);
   errorMessage = signal('');
   hidePassword = signal(true);
   hideConfirmPassword = signal(true);
 
-  constructor(
-    private fb: FormBuilder,
-    private router: Router
-  ) {
+  constructor(private fb: FormBuilder) {
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8)]],
@@ -64,24 +67,32 @@ export class RegisterComponent {
       this.errorMessage.set('');
 
       try {
-        // Simulate registration delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        const { email, password } = this.registerForm.value;
         
-        console.log('Registration attempted with:', {
-          email: this.registerForm.value.email,
-          acceptedTerms: this.registerForm.value.acceptTerms
-          // Don't log password in production
-        });
+        // Call the real AuthService
+        const result = await this.authService.signUp(email, password);
         
-        // Simulate success and redirect to login
-        this.router.navigate(['/login'], { 
-          queryParams: { 
-            registered: 'true',
-            email: this.registerForm.value.email 
-          }
-        });
+        if (result.success) {
+          // Show success message
+          this.snackBar.open(
+            'Registration successful! Please check your email to verify your account.',
+            'Close',
+            { duration: 5000 }
+          );
+          
+          // Navigate to login
+          this.router.navigate(['/login'], { 
+            queryParams: { 
+              registered: 'true',
+              email: email 
+            }
+          });
+        } else {
+          this.errorMessage.set(result.error || 'Registration failed. Please try again.');
+        }
       } catch (error) {
-        this.errorMessage.set('Registration failed. Please try again.');
+        console.error('Registration error:', error);
+        this.errorMessage.set('An unexpected error occurred. Please try again.');
       } finally {
         this.isLoading.set(false);
       }
