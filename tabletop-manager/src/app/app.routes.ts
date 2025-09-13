@@ -17,13 +17,14 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    canActivate: [authGuard], // 🔒 Protected by auth guard
+    canActivate: [authGuard],
     loadComponent: () => import('../app/features/game-spaces/dashboard/dashboard').then(m => m.DashboardComponent)
   },
-  // Admin Panel Routes
+  // Admin Panel Routes with proper child routing
   {
     path: 'admin',
-    canActivate: [authGuard], // 🔒 Protected by auth guard
+    canActivate: [authGuard],
+    loadComponent: () => import('../app/features/game-spaces/admin-panel/admin-panel').then(m => m.AdminPanelComponent),
     children: [
       {
         path: '',
@@ -35,28 +36,8 @@ export const routes: Routes = [
         loadComponent: () => import('../app/features/game-spaces/admin-panel/admin-panel').then(m => m.AdminPanelComponent)
       },
       {
-        path: 'content',
-        loadComponent: () => import('../app/features/game-spaces/admin-panel/admin-panel').then(m => m.AdminPanelComponent)
-      },
-      {
-        path: 'characters',
-        loadComponent: () => import('../app/features/game-spaces/admin-panel/admin-panel').then(m => m.AdminPanelComponent)
-      },
-      {
         path: 'attributes',
-        loadComponent: () => import('../app/features/game-spaces/admin-panel/admin-panel').then(m => m.AdminPanelComponent)
-      },
-      {
-        path: 'trackers',
-        loadComponent: () => import('../app/features/game-spaces/admin-panel/admin-panel').then(m => m.AdminPanelComponent)
-      },
-      {
-        path: 'members',
-        loadComponent: () => import('../app/features/game-spaces/admin-panel/admin-panel').then(m => m.AdminPanelComponent)
-      },
-      {
-        path: 'settings',
-        loadComponent: () => import('../app/features/game-spaces/admin-panel/admin-panel').then(m => m.AdminPanelComponent)
+        loadComponent: () => import('../app/features/game-spaces/attribute-manager/attribute-manager').then(m => m.AttributeManagerComponent)
       }
     ]
   },

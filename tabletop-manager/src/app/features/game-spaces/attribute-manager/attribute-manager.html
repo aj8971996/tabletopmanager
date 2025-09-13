@@ -1,0 +1,400 @@
+<div class="attribute-manager-container">
+  <!-- Header Section -->
+  <div class="manager-header">
+    <div class="header-content">
+      <div class="title-section">
+        <mat-icon class="header-icon">tune</mat-icon>
+        <div>
+          <h1>Attribute Management</h1>
+          <p class="subtitle">Define character stats and calculations for {{ currentGameSpace()?.name }}</p>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <button 
+          mat-raised-button 
+          color="primary"
+          (click)="toggleTemplates()"
+          class="template-button">
+          <mat-icon>auto_awesome</mat-icon>
+          <span>Use Template</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Loading attributes...</p>
+    </div>
+  }
+
+  <!-- Templates Panel -->
+  @if (showTemplates()) {
+    <mat-card class="templates-panel">
+      <mat-card-header>
+        <div class="templates-header">
+          <div class="template-title">
+            <mat-icon>auto_awesome</mat-icon>
+            <h2>Attribute Templates</h2>
+          </div>
+          <button mat-icon-button (click)="toggleTemplates()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <p class="template-description">
+          Choose a pre-built attribute system to get started quickly. You can always customize these later.
+        </p>
+        
+        <div class="template-grid">
+          @for (template of attributeTemplates; track template.name) {
+            <mat-card 
+              class="template-card"
+              [class.selected]="selectedTemplate()?.name === template.name"
+              (click)="onSelectTemplate(template)">
+              <mat-card-content>
+                <div class="template-info">
+                  <h3>{{ template.label }}</h3>
+                  <div class="template-attributes">
+                    <mat-chip-listbox>
+                      @for (attr of template.attributes; track attr.name) {
+                        <mat-chip-option [selected]="false" [disabled]="true">
+                          {{ attr.label }}
+                        </mat-chip-option>
+                      }
+                    </mat-chip-listbox>
+                  </div>
+                  <p class="attribute-count">{{ template.attributes.length }} attributes</p>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+
+        @if (selectedTemplate()) {
+          <div class="selected-template-actions">
+            <div class="template-preview">
+              <h3>{{ selectedTemplate()!.label }} Preview</h3>
+              <div class="preview-attributes">
+                @for (attr of selectedTemplate()!.attributes; track attr.name) {
+                  <div class="preview-attribute">
+                    <span class="attr-name">{{ attr.label }}</span>
+                    <span class="attr-range">{{ attr.min }}-{{ attr.max }}</span>
+                    <span class="attr-default">Default: {{ attr.default }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+            
+            <div class="template-buttons">
+              <button mat-button (click)="clearSelectedTemplate()">
+                Cancel
+              </button>
+              <button mat-raised-button color="primary" (click)="onApplyTemplate()">
+                <mat-icon>check</mat-icon>
+                Apply Template
+              </button>
+            </div>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Main Content -->
+  @if (!isLoading()) {
+    <div class="manager-content">
+      <!-- Attribute Creation/Edit Form -->
+      <mat-card class="form-card">
+        <mat-card-header>
+          <div class="form-header">
+            <div class="form-title">
+              <mat-icon>{{ editingAttribute() ? 'edit' : 'add' }}</mat-icon>
+              <h2>{{ editingAttribute() ? 'Edit' : 'Create' }} Attribute</h2>
+            </div>
+            @if (editingAttribute()) {
+              <button mat-icon-button (click)="cancelEdit()" matTooltip="Cancel editing">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </div>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <form [formGroup]="attributeForm" class="attribute-form">
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Attribute Name</mat-label>
+                <input matInput formControlName="attribute_name" placeholder="STR" maxlength="20">
+                <mat-hint>Use uppercase letters and underscores only (e.g., STR, DEX, CUSTOM_STAT)</mat-hint>
+                @if (getAttributeNameError()) {
+                  <mat-error>{{ getAttributeNameError() }}</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Display Label</mat-label>
+                <input matInput formControlName="attribute_label" placeholder="Strength" maxlength="100">
+                <mat-hint>Human-readable name shown to players</mat-hint>
+                @if (attributeForm.get('attribute_label')?.hasError('required')) {
+                  <mat-error>Display label is required</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Calculation Type</mat-label>
+                <mat-select formControlName="calculation_type">
+                  <mat-option value="static">Static Value</mat-option>
+                  <mat-option value="calculated" disabled>Calculated (Coming Soon)</mat-option>
+                </mat-select>
+                <mat-hint>How this attribute's value is determined</mat-hint>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Display Order</mat-label>
+                <input matInput formControlName="display_order" type="number" min="0">
+                <mat-hint>Order attributes appear in character sheets</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Minimum Value</mat-label>
+                <input matInput formControlName="min_value" type="number" min="0">
+                <mat-hint>Lowest possible value</mat-hint>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Maximum Value</mat-label>
+                <input matInput formControlName="max_value" type="number" min="1">
+                <mat-hint>Highest possible value</mat-hint>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Default Value</mat-label>
+                <input matInput formControlName="base_value" type="number" min="1">
+                <mat-hint>Starting value for new characters</mat-hint>
+              </mat-form-field>
+            </div>
+
+            @if (getMinMaxError()) {
+              <div class="form-error">
+                <mat-icon>error</mat-icon>
+                <span>{{ getMinMaxError() }}</span>
+              </div>
+            }
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field full-width">
+                <mat-label>Description</mat-label>
+                <textarea matInput formControlName="description" rows="3" maxlength="500"></textarea>
+                <mat-hint>Explain what this attribute represents (optional)</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-slide-toggle formControlName="is_core_stat" class="core-stat-toggle">
+                <span class="toggle-label">
+                  <mat-icon>star</mat-icon>
+                  Core Attribute
+                </span>
+                <span class="toggle-hint">Core attributes appear prominently on character sheets</span>
+              </mat-slide-toggle>
+            </div>
+
+            <div class="form-actions">
+              @if (editingAttribute()) {
+                <button mat-button type="button" (click)="cancelEdit()">
+                  Cancel
+                </button>
+                <button 
+                  mat-raised-button 
+                  color="primary" 
+                  type="button"
+                  [disabled]="!isFormValid()"
+                  (click)="onUpdateAttribute()">
+                  <mat-icon>save</mat-icon>
+                  Update Attribute
+                </button>
+              } @else {
+                <button 
+                  mat-raised-button 
+                  color="primary" 
+                  type="button"
+                  [disabled]="!isFormValid()"
+                  (click)="onCreateAttribute()">
+                  <mat-icon>add</mat-icon>
+                  Create Attribute
+                </button>
+              }
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Existing Attributes List -->
+      <mat-card class="attributes-list-card">
+        <mat-card-header>
+          <div class="list-header">
+            <div class="list-title">
+              <mat-icon>list</mat-icon>
+              <h2>Current Attributes</h2>
+              <span class="attribute-count">({{ dynamicAttributes().length }})</span>
+            </div>
+            
+            @if (dynamicAttributes().length > 0) {
+              <form [formGroup]="searchForm" class="search-form">
+                <mat-form-field appearance="outline" class="search-field">
+                  <mat-label>Search attributes</mat-label>
+                  <input matInput formControlName="search" placeholder="Type to search...">
+                  <mat-icon matSuffix>search</mat-icon>
+                </mat-form-field>
+              </form>
+            }
+          </div>
+        </mat-card-header>
+
+        <mat-card-content>
+          @if (dynamicAttributes().length === 0) {
+            <div class="empty-state">
+              <mat-icon>tune</mat-icon>
+              <h3>No Attributes Yet</h3>
+              <p>Create your first attribute above or use a template to get started quickly.</p>
+              <button mat-raised-button color="primary" (click)="toggleTemplates()">
+                <mat-icon>auto_awesome</mat-icon>
+                Use Template
+              </button>
+            </div>
+          } @else {
+            <!-- Attributes Table -->
+            <div class="attributes-table-container">
+              <table mat-table [dataSource]="dynamicAttributes()" class="attributes-table" cdkDropList (cdkDropListDropped)="onDrop($event)">
+                <!-- Drag Handle Column -->
+                <ng-container matColumnDef="drag">
+                  <th mat-header-cell *matHeaderCellDef></th>
+                  <td mat-cell *matCellDef="let attribute">
+                    <mat-icon cdkDragHandle class="drag-handle" matTooltip="Drag to reorder">drag_indicator</mat-icon>
+                  </td>
+                </ng-container>
+
+                <!-- Name Column -->
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef>Attribute</th>
+                  <td mat-cell *matCellDef="let attribute">
+                    <div class="attribute-name-cell">
+                      <div class="name-primary">
+                        <span class="name-code">{{ attribute.attribute_name }}</span>
+                        <span class="name-label">{{ attribute.attribute_label }}</span>
+                      </div>
+                      @if (attribute.description) {
+                        <div class="name-description">{{ attribute.description }}</div>
+                      }
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Type Column -->
+                <ng-container matColumnDef="type">
+                  <th mat-header-cell *matHeaderCellDef>Type</th>
+                  <td mat-cell *matCellDef="let attribute">
+                    <div class="type-cell">
+                      <mat-icon class="type-icon">{{ getAttributeTypeIcon(attribute.calculation_type) }}</mat-icon>
+                      <span>{{ getAttributeTypeLabel(attribute.calculation_type) }}</span>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Range Column -->
+                <ng-container matColumnDef="range">
+                  <th mat-header-cell *matHeaderCellDef>Range</th>
+                  <td mat-cell *matCellDef="let attribute">
+                    <span class="range-display">{{ attribute.min_value }}–{{ attribute.max_value }}</span>
+                  </td>
+                </ng-container>
+
+                <!-- Default Column -->
+                <ng-container matColumnDef="default">
+                  <th mat-header-cell *matHeaderCellDef>Default</th>
+                  <td mat-cell *matCellDef="let attribute">
+                    <span class="default-value">{{ attribute.base_value }}</span>
+                  </td>
+                </ng-container>
+
+                <!-- Core Column -->
+                <ng-container matColumnDef="core">
+                  <th mat-header-cell *matHeaderCellDef>Core</th>
+                  <td mat-cell *matCellDef="let attribute">
+                    @if (attribute.is_core_stat) {
+                      <mat-icon class="core-icon" matTooltip="Core attribute">star</mat-icon>
+                    } @else {
+                      <mat-icon class="non-core-icon" matTooltip="Secondary attribute">star_border</mat-icon>
+                    }
+                  </td>
+                </ng-container>
+
+                <!-- Actions Column -->
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef>Actions</th>
+                  <td mat-cell *matCellDef="let attribute">
+                    <div class="action-buttons">
+                      <button 
+                        mat-icon-button 
+                        (click)="onEditAttribute(attribute)"
+                        matTooltip="Edit attribute">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      
+                      <button 
+                        mat-icon-button 
+                        [matMenuTriggerFor]="actionMenu"
+                        matTooltip="More actions">
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+
+                      <mat-menu #actionMenu="matMenu">
+                        <button mat-menu-item (click)="onDeleteAttribute(attribute)">
+                          <mat-icon>delete</mat-icon>
+                          <span>Delete</span>
+                        </button>
+                      </mat-menu>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr 
+                  mat-row 
+                  *matRowDef="let row; columns: displayedColumns;"
+                  cdkDrag
+                  [cdkDragData]="row"
+                  class="attribute-row">
+                </tr>
+              </table>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="attributes-summary">
+              <div class="summary-stats">
+                <div class="stat-item">
+                  <mat-icon>tune</mat-icon>
+                  <span>{{ dynamicAttributes().length }} Total</span>
+                </div>
+                <div class="stat-item">
+                  <mat-icon>star</mat-icon>
+                  <span>{{ coreAttributes().length }} Core</span>
+                </div>
+              </div>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</div>
