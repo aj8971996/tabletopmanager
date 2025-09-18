@@ -349,19 +349,11 @@
           </div>
         }
 
-        <!-- Custom Attributes Section -->
+        <!-- Custom Attributes Section - NOW FUNCTIONAL! -->
         @if (activeTab() === 'attributes') {
           <div class="content-section">
-            <div class="section-header">
-              <h2>Custom Attributes</h2>
-              <p>Define character stats, calculations, and attribute relationships</p>
-            </div>
-            
-            <div class="coming-soon">
-              <mat-icon>tune</mat-icon>
-              <h3>Attribute System</h3>
-              <p>Custom attribute creation and calculation engine coming soon!</p>
-            </div>
+            <!-- Load the actual attribute manager component -->
+            <app-attribute-manager></app-attribute-manager>
           </div>
         }
 

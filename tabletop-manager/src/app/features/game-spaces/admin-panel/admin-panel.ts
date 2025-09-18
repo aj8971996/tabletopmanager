@@ -14,9 +14,11 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { GameSpaceService } from '../game-space';
 import { GameSpace } from '../../../shared/models';
+import { AttributeManagerComponent } from '../attribute-manager/attribute-manager';
 
 interface AdminSection {
   id: string;
@@ -47,7 +49,9 @@ interface AdminSection {
     MatBadgeModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    MatToolbarModule
+    MatTooltipModule,
+    // Import the AttributeManagerComponent so we can use it in template
+    AttributeManagerComponent
   ]
 })
 export class AdminPanelComponent implements OnInit {
@@ -146,6 +150,9 @@ export class AdminPanelComponent implements OnInit {
       });
       this.gameSpaceService.clearError();
     }
+
+    // Update badge counts from stats
+    this.updateBadgeCounts();
   }
 
   onBackToDashboard() {
@@ -163,6 +170,7 @@ export class AdminPanelComponent implements OnInit {
         this.onSectionSelect(this.adminSections.find(s => s.id === 'characters')!);
         break;
       case 'add_attribute':
+        // Navigate to attributes section - this will now load the actual component!
         this.onSectionSelect(this.adminSections.find(s => s.id === 'attributes')!);
         break;
       case 'add_tracker':
@@ -222,6 +230,30 @@ export class AdminPanelComponent implements OnInit {
       const membersSection = this.adminSections.find(s => s.id === 'members');
       if (membersSection) {
         membersSection.badge = stats.totalMembers;
+      }
+
+      // Update attributes badge
+      const attributesSection = this.adminSections.find(s => s.id === 'attributes');
+      if (attributesSection) {
+        attributesSection.badge = stats.customAttributes;
+      }
+
+      // Update characters badge
+      const charactersSection = this.adminSections.find(s => s.id === 'characters');
+      if (charactersSection) {
+        charactersSection.badge = stats.playerCharacters + stats.npcs;
+      }
+
+      // Update content badge
+      const contentSection = this.adminSections.find(s => s.id === 'content');
+      if (contentSection) {
+        contentSection.badge = stats.contentPages;
+      }
+
+      // Update trackers badge
+      const trackersSection = this.adminSections.find(s => s.id === 'trackers');
+      if (trackersSection) {
+        trackersSection.badge = stats.activeTrackers;
       }
     }
   }
