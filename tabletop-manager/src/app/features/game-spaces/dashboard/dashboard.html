@@ -25,87 +25,258 @@
 
   <!-- Main Content -->
   <div class="dashboard-content">
-    <div class="content-header">
-      <h1>Your Game Spaces</h1>
-      <button mat-raised-button color="accent" (click)="onCreateGameSpace()">
-        <mat-icon>add</mat-icon>
-        <span>Create New Game Space</span>
-      </button>
-    </div>
+    <!-- Section Tabs -->
+<mat-tab-group [selectedIndex]="selectedTabIndex()" (selectedIndexChange)="onTabChange($event)" class="dashboard-tabs">     
+   <mat-tab label="My Game Spaces">
+        <div class="tab-content">
+          <div class="content-header">
+            <h1>Your Game Spaces</h1>
+            <button mat-raised-button color="accent" (click)="onCreateGameSpace()">
+              <mat-icon>add</mat-icon>
+              <span>Create New Game Space</span>
+            </button>
+          </div>
 
-    <!-- Game Spaces Grid -->
-    <div class="game-spaces-grid">
-      @if (gameSpaces().length === 0) {
-        <!-- Empty State -->
-        <div class="empty-state">
-          <mat-icon class="empty-icon">games</mat-icon>
-          <h2>No Game Spaces Yet</h2>
-          <p>Create your first game space to start building your tabletop campaign!</p>
-          <button mat-raised-button color="primary" (click)="onCreateGameSpace()">
-            <mat-icon>add</mat-icon>
-            <span>Create Your First Game Space</span>
-          </button>
-        </div>
-      } @else {
-        <!-- Game Space Cards -->
-        @for (gameSpace of gameSpaces(); track gameSpace.id) {
-          <mat-card class="game-space-card">
-            <mat-card-header>
-              <mat-card-title>{{ gameSpace.name }}</mat-card-title>
-              <mat-card-subtitle>
-                Created {{ gameSpace.created_at | date:'shortDate' }}
-                @if (gameSpace.member_count !== undefined) {
-                  · {{ gameSpace.member_count }} member{{ gameSpace.member_count === 1 ? '' : 's' }}
-                }
-              </mat-card-subtitle>
-              
-              <button mat-icon-button [matMenuTriggerFor]="cardMenu" class="card-menu">
-                <mat-icon>more_vert</mat-icon>
+          <!-- Loading State -->
+          @if (isLoading()) {
+            <div class="loading-container">
+              <mat-spinner diameter="60"></mat-spinner>
+              <h2>Loading Your Game Spaces...</h2>
+              <p>Please wait while we fetch your campaigns and sessions.</p>
+            </div>
+          }
+
+          <!-- Error State -->
+          @else if (error()) {
+            <div class="error-container">
+              <mat-icon class="error-icon">error_outline</mat-icon>
+              <h2>Unable to Load Game Spaces</h2>
+              <p>{{ error() }}</p>
+              <button mat-raised-button color="primary" (click)="onRetryLoad()">
+                <mat-icon>refresh</mat-icon>
+                <span>Try Again</span>
               </button>
-              
-              <mat-menu #cardMenu="matMenu">
-                <button mat-menu-item (click)="onSelectGameSpace(gameSpace)">
-                  <mat-icon>play_arrow</mat-icon>
-                  <span>Enter Game Space</span>
-                </button>
-                <button mat-menu-item (click)="onManageGameSpace(gameSpace)">
-                  <mat-icon>settings</mat-icon>
-                  <span>Admin Panel</span>
-                </button>
-                <mat-divider></mat-divider>
-                <button mat-menu-item (click)="onInvitePlayers(gameSpace)">
-                  <mat-icon>person_add</mat-icon>
-                  <span>Invite Players</span>
-                </button>
-                <mat-divider></mat-divider>
-                <button mat-menu-item (click)="onDeleteGameSpace(gameSpace)" class="danger-action">
-                  <mat-icon>delete</mat-icon>
-                  <span>Delete</span>
-                </button>
-              </mat-menu>
-            </mat-card-header>
+            </div>
+          }
 
-            <mat-card-content>
-              @if (gameSpace.description) {
-                <p class="game-space-description">{{ gameSpace.description }}</p>
+          <!-- Content: Empty State or Game Spaces -->
+          @else {
+            <div class="game-spaces-grid">
+              @if (gameSpaces().length === 0) {
+                <!-- Empty State -->
+                <div class="empty-state">
+                  <mat-icon class="empty-icon">games</mat-icon>
+                  <h2>No Game Spaces Yet</h2>
+                  <p>Create your first game space to start building your tabletop campaign!</p>
+                  <div class="empty-actions">
+                    <button mat-raised-button color="primary" (click)="onCreateGameSpace()">
+                      <mat-icon>add</mat-icon>
+                      <span>Create Your First Game Space</span>
+                    </button>
+                    <button mat-stroked-button color="primary" (click)="onSwitchToBrowse()">
+                      <mat-icon>explore</mat-icon>
+                      <span>Browse Public Spaces</span>
+                    </button>
+                  </div>
+                </div>
               } @else {
-                <p class="no-description">No description provided</p>
-              }
-            </mat-card-content>
+                <!-- Game Space Cards -->
+                @for (gameSpace of gameSpaces(); track gameSpace.id) {
+                  <mat-card class="game-space-card">
+                    <mat-card-header>
+                      <mat-card-title>{{ gameSpace.name }}</mat-card-title>
+                      <mat-card-subtitle>
+                        Created {{ gameSpace.created_at | date:'shortDate' }}
+                        @if (gameSpace.member_count !== undefined) {
+                          · {{ gameSpace.member_count }} member{{ gameSpace.member_count === 1 ? '' : 's' }}
+                        }
+                      </mat-card-subtitle>
+                      
+                      <button mat-icon-button [matMenuTriggerFor]="cardMenu" class="card-menu">
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+                      
+                      <mat-menu #cardMenu="matMenu">
+                        <button mat-menu-item (click)="onSelectGameSpace(gameSpace)">
+                          <mat-icon>play_arrow</mat-icon>
+                          <span>Enter Game Space</span>
+                        </button>
+                        <button mat-menu-item (click)="onManageGameSpace(gameSpace)">
+                          <mat-icon>settings</mat-icon>
+                          <span>Admin Panel</span>
+                        </button>
+                        <mat-divider></mat-divider>
+                        <button mat-menu-item (click)="onInvitePlayers(gameSpace)">
+                          <mat-icon>person_add</mat-icon>
+                          <span>Invite Players</span>
+                        </button>
+                        <mat-divider></mat-divider>
+                        <button mat-menu-item (click)="onDeleteGameSpace(gameSpace)" class="danger-action">
+                          <mat-icon>delete</mat-icon>
+                          <span>Delete</span>
+                        </button>
+                      </mat-menu>
+                    </mat-card-header>
 
-            <mat-card-actions>
-              <button mat-button color="primary" (click)="onSelectGameSpace(gameSpace)">
-                <mat-icon>play_arrow</mat-icon>
-                <span>Enter Game Space</span>
+                    <mat-card-content>
+                      @if (gameSpace.description) {
+                        <p class="game-space-description">{{ gameSpace.description }}</p>
+                      } @else {
+                        <p class="no-description">No description provided</p>
+                      }
+                    </mat-card-content>
+
+                    <mat-card-actions>
+                      <button mat-button color="primary" (click)="onSelectGameSpace(gameSpace)">
+                        <mat-icon>play_arrow</mat-icon>
+                        <span>Enter Game Space</span>
+                      </button>
+                      <button mat-button (click)="onManageGameSpace(gameSpace)">
+                        <mat-icon>settings</mat-icon>
+                        <span>Admin Panel</span>
+                      </button>
+                    </mat-card-actions>
+                  </mat-card>
+                }
+              }
+            </div>
+          }
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Browse Public Spaces">
+        <div class="tab-content">
+          <div class="content-header">
+            <h1>Public Game Spaces</h1>
+            <div class="browse-actions">
+              <mat-form-field appearance="outline" class="search-field">
+                <mat-label>Search game spaces</mat-label>
+                <input matInput [formControl]="searchControl" placeholder="Search by name, genre, or system...">
+                <mat-icon matSuffix>search</mat-icon>
+              </mat-form-field>
+              <button mat-icon-button [matMenuTriggerFor]="filterMenu" matTooltip="Filter options">
+                <mat-icon>filter_list</mat-icon>
               </button>
-              <button mat-button (click)="onManageGameSpace(gameSpace)">
-                <mat-icon>settings</mat-icon>
-                <span>Admin Panel</span>
-              </button>
-            </mat-card-actions>
-          </mat-card>
-        }
-      }
-    </div>
+              <mat-menu #filterMenu="matMenu">
+                <div class="filter-menu-content">
+                  <h4>Game System</h4>
+                  <mat-selection-list>
+                    <mat-list-option value="dnd5e">D&D 5th Edition</mat-list-option>
+                    <mat-list-option value="pathfinder">Pathfinder</mat-list-option>
+                    <mat-list-option value="modern">Modern/Contemporary</mat-list-option>
+                    <mat-list-option value="custom">Custom Systems</mat-list-option>
+                  </mat-selection-list>
+                </div>
+              </mat-menu>
+            </div>
+          </div>
+
+          <!-- Browse Loading State -->
+          @if (isBrowseLoading()) {
+            <div class="loading-container">
+              <mat-spinner diameter="60"></mat-spinner>
+              <h2>Discovering Public Game Spaces...</h2>
+              <p>Finding exciting campaigns you can join.</p>
+            </div>
+          }
+
+          <!-- Browse Content -->
+          @else {
+            <div class="browse-content">
+              <!-- Featured Spaces -->
+              <section class="featured-section">
+                <h2>Featured Game Spaces</h2>
+                <div class="featured-grid">
+                  @for (space of featuredSpaces(); track space.id) {
+                    <mat-card class="featured-space-card">
+                      <mat-card-header>
+                        <mat-card-title>{{ space.name }}</mat-card-title>
+                        <mat-card-subtitle>
+                          by {{ space.gm_name }} · {{ space.system_type }}
+                        </mat-card-subtitle>
+                        
+                        <span class="featured-badge">
+                          <mat-icon>star</mat-icon>
+                          Featured
+                        </span>
+                      </mat-card-header>
+
+                      <mat-card-content>
+                        <p class="space-description">{{ space.description }}</p>
+                        <div class="space-stats">
+                          <span class="stat">
+                            <mat-icon>people</mat-icon>
+                            {{ space.member_count }} members
+                          </span>
+                          <span class="stat">
+                            <mat-icon>access_time</mat-icon>
+                            {{ space.activity_level }}
+                          </span>
+                        </div>
+                      </mat-card-content>
+
+                      <mat-card-actions>
+                        <button mat-button color="primary" (click)="onViewPublicSpace(space)">
+                          <mat-icon>visibility</mat-icon>
+                          <span>View Details</span>
+                        </button>
+                        <button mat-stroked-button color="accent" (click)="onRequestAccess(space)">
+                          <mat-icon>person_add</mat-icon>
+                          <span>Request Access</span>
+                        </button>
+                      </mat-card-actions>
+                    </mat-card>
+                  }
+                </div>
+              </section>
+
+              <!-- Browse Results -->
+              <section class="browse-results">
+                <h2>All Public Spaces</h2>
+                
+                @if (publicSpaces().length === 0) {
+                  <div class="no-results">
+                    <mat-icon>search_off</mat-icon>
+                    <h3>No Public Spaces Found</h3>
+                    <p>No public game spaces match your current search criteria.</p>
+                    <button mat-button color="primary" (click)="onClearSearch()">Clear Search</button>
+                  </div>
+                } @else {
+                  <div class="public-spaces-grid">
+                    @for (space of publicSpaces(); track space.id) {
+                      <mat-card class="public-space-card">
+                        <mat-card-header>
+                          <mat-card-title>{{ space.name }}</mat-card-title>
+                          <mat-card-subtitle>{{ space.system_type }}</mat-card-subtitle>
+                        </mat-card-header>
+
+                        <mat-card-content>
+                          <p class="space-description">{{ space.description | slice:0:120 }}{{space.description.length > 120 ? '...' : ''}}</p>
+                          <div class="space-meta">
+                            <span class="meta-item">
+                              <mat-icon>person</mat-icon>
+                              {{ space.gm_name }}
+                            </span>
+                            <span class="meta-item">
+                              <mat-icon>people</mat-icon>
+                              {{ space.member_count }}
+                            </span>
+                          </div>
+                        </mat-card-content>
+
+                        <mat-card-actions>
+                          <button mat-button (click)="onViewPublicSpace(space)">View</button>
+                          <button mat-stroked-button color="primary" (click)="onRequestAccess(space)">Join</button>
+                        </mat-card-actions>
+                      </mat-card>
+                    }
+                  </div>
+                }
+              </section>
+            </div>
+          }
+        </div>
+      </mat-tab>
+    </mat-tab-group>
   </div>
 </div>
