@@ -38,6 +38,10 @@ export const routes: Routes = [
       {
         path: 'attributes',
         loadComponent: () => import('../app/features/game-spaces/attribute-manager/attribute-manager').then(m => m.AttributeManagerComponent)
+      },
+      {
+        path: 'character-classes',
+        loadComponent: () => import('../app/features/game-spaces/character-class-manager/character-class-manager').then(m => m.CharacterClassManagerComponent)
       }
     ]
   },

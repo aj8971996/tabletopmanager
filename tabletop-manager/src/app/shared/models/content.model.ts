@@ -28,8 +28,8 @@ export interface CharacterClass {
   name: string;
   description?: string;
   base_stats: Record<string, any>;
-  available_skills: string[];
-  special_abilities: Record<string, any>;
+  available_skills?: string[];
+  special_abilities?: Record<string, any>;
   created_at: string;
   updated_at: string;
 }

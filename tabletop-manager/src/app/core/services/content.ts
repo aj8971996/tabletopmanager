@@ -13,6 +13,14 @@ import {
   CreateCustomSectionRequest
 } from '../../shared/models';
 
+interface CreateCharacterClassRequest {
+  name: string;
+  description?: string;
+  base_stats: Record<string, number>;
+  available_skills?: string[];
+  special_abilities?: Record<string, any>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -101,6 +109,77 @@ export class ContentService {
       this.characterClassesSignal.set(data || []);
     } catch (error) {
       console.error('Error in loadCharacterClasses:', error);
+    }
+  }
+
+  async createCharacterClass(gameSpaceId: string, request: CreateCharacterClassRequest): Promise<CharacterClass | null> {
+    try {
+      const { data, error } = await this.supabaseService.client
+        .from('character_classes')
+        .insert([{ ...request, game_space_id: gameSpaceId }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating character class:', error);
+        return null;
+      }
+
+      // Refresh the classes list
+      await this.loadCharacterClasses(gameSpaceId);
+      return data;
+    } catch (error) {
+      console.error('Error in createCharacterClass:', error);
+      return null;
+    }
+  }
+
+  async updateCharacterClass(classId: string, updates: Partial<CharacterClass>): Promise<CharacterClass | null> {
+    try {
+      const { data, error } = await this.supabaseService.client
+        .from('character_classes')
+        .update(updates)
+        .eq('id', classId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating character class:', error);
+        return null;
+      }
+
+      // Update the classes list
+      const classes = this.characterClassesSignal();
+      const updatedClasses = classes.map(cls => 
+        cls.id === classId ? data : cls
+      );
+      this.characterClassesSignal.set(updatedClasses);
+
+      return data;
+    } catch (error) {
+      console.error('Error in updateCharacterClass:', error);
+      return null;
+    }
+  }
+
+  async deleteCharacterClass(classId: string, gameSpaceId: string): Promise<boolean> {
+    try {
+      const { error } = await this.supabaseService.client
+        .from('character_classes')
+        .delete()
+        .eq('id', classId);
+
+      if (error) {
+        console.error('Error deleting character class:', error);
+        return false;
+      }
+
+      // Refresh the classes list
+      await this.loadCharacterClasses(gameSpaceId);
+      return true;
+    } catch (error) {
+      console.error('Error in deleteCharacterClass:', error);
+      return false;
     }
   }
 

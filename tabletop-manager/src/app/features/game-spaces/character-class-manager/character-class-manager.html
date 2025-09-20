@@ -1,0 +1,488 @@
+<!-- character-class-manager.html -->
+<div class="class-manager-container">
+  <!-- Header Section -->
+  <header class="manager-header">
+    <div class="header-content">
+      <div class="title-section">
+        <mat-icon class="header-icon">school</mat-icon>
+        <div class="title-info">
+          <h1>Character Class Management</h1>
+          <p class="subtitle">Create classes, races, and archetypes for {{ currentGameSpace()?.name }}</p>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        @if (characterClasses().length > 0) {
+          <button 
+            mat-stroked-button 
+            color="primary"
+            (click)="toggleTemplates()"
+            class="template-toggle">
+            <mat-icon>{{ showTemplates() ? 'expand_less' : 'auto_awesome' }}</mat-icon>
+            <span>{{ showTemplates() ? 'Hide Templates' : 'Use Template' }}</span>
+          </button>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Loading character classes...</p>
+    </div>
+  }
+
+  <!-- Getting Started / Templates Section -->
+  @if (characterClasses().length === 0 || showTemplates()) {
+    <section class="templates-section" [class.collapsible]="characterClasses().length > 0">
+      <mat-card class="templates-card">
+        <mat-card-header>
+          <div class="templates-header">
+            <div class="templates-title">
+              <mat-icon>auto_awesome</mat-icon>
+              <h2>{{ characterClasses().length === 0 ? 'Quick Start with Class Templates' : 'Class Templates' }}</h2>
+            </div>
+            @if (characterClasses().length > 0) {
+              <button mat-icon-button (click)="toggleTemplates()" matTooltip="Close templates">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </div>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <p class="templates-description">
+            {{ characterClasses().length === 0 
+              ? 'Choose from proven character archetypes to get started quickly, or create custom classes from scratch.'
+              : 'Add pre-built character classes to supplement your existing ones.' }}
+          </p>
+          
+          <div class="templates-grid">
+            @for (template of classTemplates; track template.name) {
+              <div 
+                class="template-card"
+                [class.selected]="selectedTemplate()?.name === template.name"
+                (click)="onSelectTemplate(template)">
+                
+                <div class="template-header">
+                  <div class="template-title">
+                    <h3>{{ template.label }}</h3>
+                    <span class="template-category" [style.color]="getClassCategoryColor(template.category)">
+                      <mat-icon>{{ getClassCategoryIcon(template.category) }}</mat-icon>
+                      {{ template.category }}
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="template-description">
+                  <p>{{ template.description }}</p>
+                </div>
+
+                <div class="template-stats">
+                  <h4>Base Stats</h4>
+                  <div class="stats-preview">
+                    @for (stat of dynamicAttributes(); track stat.attribute_name) {
+                      <div class="stat-item">
+                        <span class="stat-name">{{ stat.attribute_name }}</span>
+                        <span class="stat-value">{{ template.baseStats[stat.attribute_name] || stat.base_value }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <div class="template-abilities">
+                  <h4>Special Abilities</h4>
+                  <div class="abilities-preview">
+                    @for (ability of template.specialAbilities.slice(0, 2); track ability.name) {
+                      <div class="ability-item">
+                        <span class="ability-name">{{ ability.name }}</span>
+                        <span class="ability-level">Lv{{ ability.level }}</span>
+                      </div>
+                    }
+                    @if (template.specialAbilities.length > 2) {
+                      <span class="more-abilities">+{{ template.specialAbilities.length - 2 }} more</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          @if (selectedTemplate()) {
+            <div class="template-actions">
+              <button mat-button (click)="clearSelectedTemplate()">Cancel</button>
+              <button mat-raised-button color="primary" (click)="onApplyTemplate()">
+                <mat-icon>check</mat-icon>
+                Apply {{ selectedTemplate()!.label }}
+              </button>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </section>
+  }
+
+  <!-- Main Content -->
+  @if (!isLoading()) {
+    <div class="main-content" [class.single-column]="characterClasses().length === 0">
+      
+      <!-- Class Form -->
+      <section class="form-section">
+        <mat-card class="form-card">
+          <mat-card-header>
+            <div class="form-header">
+              <div class="form-title">
+                <mat-icon>{{ editingClass() ? 'edit' : 'add' }}</mat-icon>
+                <h2>{{ editingClass() ? 'Edit' : 'Create' }} Character Class</h2>
+              </div>
+              @if (editingClass()) {
+                <button mat-icon-button (click)="cancelEdit()" matTooltip="Cancel editing">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </div>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <form [formGroup]="classForm" class="class-form">
+              <!-- Basic Info -->
+              <div class="form-section-group">
+                <div class="form-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Class Name</mat-label>
+                    <input 
+                      matInput 
+                      formControlName="name" 
+                      placeholder="Fighter" 
+                      maxlength="100">
+                    <mat-hint>Name of the character class</mat-hint>
+                    @if (classForm.get('name')?.hasError('required')) {
+                      <mat-error>Class name is required</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Description</mat-label>
+                  <textarea 
+                    matInput 
+                    formControlName="description" 
+                    rows="3" 
+                    maxlength="500"
+                    placeholder="A warrior trained in combat and tactics..."></textarea>
+                  <mat-hint>Describe what this class represents</mat-hint>
+                </mat-form-field>
+              </div>
+
+              <!-- Base Stats Configuration -->
+              <div class="form-section-group">
+                <h4 class="section-label">Base Attribute Values</h4>
+                <p class="section-description">Set the starting values for this class. These will be the default stats when a character chooses this class.</p>
+                
+                <div class="stats-grid" formGroupName="base_stats">
+                  @for (attribute of dynamicAttributes(); track attribute.id) {
+                    <div class="stat-field">
+                      <mat-form-field appearance="outline">
+                        <mat-label>{{ attribute.attribute_label }}</mat-label>
+                        <input 
+                          matInput 
+                          [formControlName]="attribute.attribute_name"
+                          type="number" 
+                          [min]="attribute.min_value"
+                          [max]="attribute.max_value"
+                          [placeholder]="attribute.base_value.toString()">
+                        <mat-hint>{{ attribute.min_value }}–{{ attribute.max_value }}</mat-hint>
+                        @if (classForm.get('base_stats')?.get(attribute.attribute_name)?.hasError('min')) {
+                          <mat-error>Minimum value is {{ attribute.min_value }}</mat-error>
+                        }
+                        @if (classForm.get('base_stats')?.get(attribute.attribute_name)?.hasError('max')) {
+                          <mat-error>Maximum value is {{ attribute.max_value }}</mat-error>
+                        }
+                      </mat-form-field>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Special Abilities -->
+              <div class="form-section-group">
+                <div class="abilities-header">
+                  <h4 class="section-label">Special Abilities</h4>
+                  <button 
+                    mat-icon-button 
+                    type="button"
+                    (click)="addSpecialAbility()"
+                    matTooltip="Add special ability">
+                    <mat-icon>add</mat-icon>
+                  </button>
+                </div>
+                <p class="section-description">Define unique abilities this class gains at different levels.</p>
+
+                <div formArrayName="special_abilities" class="abilities-list">
+                  @for (ability of specialAbilitiesArray.controls; track $index; let i = $index) {
+                    <mat-expansion-panel [formGroupName]="i" class="ability-panel">
+                      <mat-expansion-panel-header>
+                        <mat-panel-title>
+                          <mat-icon>star</mat-icon>
+                          <span>{{ ability.get('name')?.value || 'New Ability' }}</span>
+                        </mat-panel-title>
+                        <mat-panel-description>
+                          Level {{ ability.get('level')?.value || 1 }}
+                        </mat-panel-description>
+                      </mat-expansion-panel-header>
+
+                      <div class="ability-form">
+                        <div class="ability-row">
+                          <mat-form-field appearance="outline">
+                            <mat-label>Ability Name</mat-label>
+                            <input matInput formControlName="name" placeholder="Combat Expertise">
+                            @if (ability.get('name')?.hasError('required')) {
+                              <mat-error>Ability name is required</mat-error>
+                            }
+                          </mat-form-field>
+
+                          <mat-form-field appearance="outline">
+                            <mat-label>Level Gained</mat-label>
+                            <input matInput formControlName="level" type="number" min="1" max="20">
+                            @if (ability.get('level')?.hasError('min')) {
+                              <mat-error>Minimum level is 1</mat-error>
+                            }
+                            @if (ability.get('level')?.hasError('max')) {
+                              <mat-error>Maximum level is 20</mat-error>
+                            }
+                          </mat-form-field>
+
+                          <button 
+                            mat-icon-button 
+                            type="button"
+                            (click)="removeSpecialAbility(i)"
+                            matTooltip="Remove ability"
+                            class="remove-button">
+                            <mat-icon>delete</mat-icon>
+                          </button>
+                        </div>
+
+                        <mat-form-field appearance="outline" class="full-width">
+                          <mat-label>Description</mat-label>
+                          <textarea 
+                            matInput 
+                            formControlName="description" 
+                            rows="2"
+                            placeholder="Describe what this ability does..."></textarea>
+                          @if (ability.get('description')?.hasError('required')) {
+                            <mat-error>Description is required</mat-error>
+                          }
+                        </mat-form-field>
+                      </div>
+                    </mat-expansion-panel>
+                  }
+
+                  @if (specialAbilitiesArray.length === 0) {
+                    <div class="no-abilities">
+                      <mat-icon>info</mat-icon>
+                      <p>No special abilities defined. Click the + button above to add abilities.</p>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Available Skills -->
+              <div class="form-section-group">
+                <h4 class="section-label">Available Skills</h4>
+                <p class="section-description">List skills that this class can learn (comma-separated).</p>
+                
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Skills</mat-label>
+                  <textarea 
+                    matInput 
+                    formControlName="available_skills" 
+                    rows="2"
+                    placeholder="Athletics, Intimidation, Survival, Perception"></textarea>
+                  <mat-hint>Separate skills with commas</mat-hint>
+                </mat-form-field>
+              </div>
+
+              <!-- Form Actions -->
+              <div class="form-actions">
+                @if (editingClass()) {
+                  <button mat-button type="button" (click)="cancelEdit()">Cancel</button>
+                  <button 
+                    mat-raised-button 
+                    color="primary" 
+                    type="button"
+                    [disabled]="!isFormValid()"
+                    (click)="onUpdateClass()">
+                    <mat-icon>save</mat-icon>
+                    Update Class
+                  </button>
+                } @else {
+                  <button 
+                    mat-raised-button 
+                    color="primary" 
+                    type="button"
+                    [disabled]="!isFormValid()"
+                    (click)="onCreateClass()">
+                    <mat-icon>add</mat-icon>
+                    Create Class
+                  </button>
+                }
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+      </section>
+
+      <!-- Classes List -->
+      <section class="classes-section">
+        <mat-card class="classes-card">
+          <mat-card-header>
+            <div class="classes-header">
+              <div class="classes-title">
+                <mat-icon>list</mat-icon>
+                <h2>Character Classes</h2>
+                <span class="count-badge">({{ characterClasses().length }})</span>
+              </div>
+              
+              @if (characterClasses().length > 3) {
+                <form [formGroup]="searchForm" class="search-form">
+                  <mat-form-field appearance="outline" class="search-field">
+                    <mat-label>Search classes</mat-label>
+                    <input matInput formControlName="search" placeholder="Type to filter...">
+                    <mat-icon matSuffix>search</mat-icon>
+                  </mat-form-field>
+                </form>
+              }
+            </div>
+          </mat-card-header>
+
+          <mat-card-content>
+            @if (characterClasses().length === 0) {
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <mat-icon>school</mat-icon>
+                </div>
+                <h3>No Character Classes Yet</h3>
+                <p>Create your first character class using the form, or choose a template above to get started quickly.</p>
+              </div>
+            } @else {
+              <!-- Classes Grid -->
+              <div class="classes-grid" cdkDropList (cdkDropListDropped)="onDrop($event)">
+                @for (characterClass of characterClasses(); track characterClass.id) {
+                  <div class="class-card" cdkDrag [cdkDragData]="characterClass">
+                    <!-- Drag Handle -->
+                    <div class="drag-handle" cdkDragHandle>
+                      <mat-icon>drag_indicator</mat-icon>
+                    </div>
+
+                    <!-- Card Content -->
+                    <div class="card-content">
+                      <div class="class-header">
+                        <div class="class-identity">
+                          <h3 class="class-name">{{ characterClass.name }}</h3>
+                          @if (characterClass.special_abilities && characterClass.special_abilities['category']) {
+                            <span class="class-category" [style.color]="getClassCategoryColor(characterClass.special_abilities['category'])">
+                              <mat-icon>{{ getClassCategoryIcon(characterClass.special_abilities['category']) }}</mat-icon>
+                              {{ characterClass.special_abilities['category'] }}
+                            </span>
+                          }
+                        </div>
+                        
+                        <div class="class-actions">
+                          <button 
+                            mat-icon-button 
+                            (click)="onEditClass(characterClass)"
+                            matTooltip="Edit class">
+                            <mat-icon>edit</mat-icon>
+                          </button>
+                          <button 
+                            mat-icon-button 
+                            [matMenuTriggerFor]="actionMenu"
+                            matTooltip="More actions">
+                            <mat-icon>more_vert</mat-icon>
+                          </button>
+
+                          <mat-menu #actionMenu="matMenu">
+                            <button mat-menu-item (click)="onDeleteClass(characterClass)">
+                              <mat-icon>delete</mat-icon>
+                              <span>Delete</span>
+                            </button>
+                          </mat-menu>
+                        </div>
+                      </div>
+
+                      @if (characterClass.description) {
+                        <p class="class-description">{{ characterClass.description }}</p>
+                      }
+
+                      <!-- Base Stats Display -->
+                      <div class="class-stats">
+                        <h4>Base Stats</h4>
+                        <div class="stats-display">
+                          @for (attribute of dynamicAttributes(); track attribute.id) {
+                            @if (characterClass.base_stats[attribute.attribute_name] !== undefined) {
+                              <div class="stat-display">
+                                <span class="stat-label">{{ attribute.attribute_name }}</span>
+                                <span class="stat-value">{{ characterClass.base_stats[attribute.attribute_name] }}</span>
+                              </div>
+                            }
+                          }
+                        </div>
+                      </div>
+
+                      <!-- Special Abilities Preview -->
+                      @if (characterClass.special_abilities?.['abilities'] && characterClass.special_abilities?.['abilities']?.length > 0) {
+                        <div class="class-abilities">
+                          <h4>Special Abilities</h4>
+                          <div class="abilities-display">
+                            @for (ability of characterClass.special_abilities?.['abilities']?.slice(0, 2); track ability.name) {
+                              <div class="ability-display">
+                                <span class="ability-name">{{ ability.name }}</span>
+                                <span class="ability-level">Lv{{ ability.level }}</span>
+                              </div>
+                            }
+                            @if (characterClass.special_abilities?.['abilities'] && characterClass.special_abilities?.['abilities']?.length > 2) {
+                              <span class="more-abilities">+{{ characterClass.special_abilities?.['abilities']?.length - 2 }} more</span>
+                            }
+                          </div>
+                        </div>
+                      }
+
+                      <!-- Available Skills Preview -->
+                      @if (characterClass.available_skills && characterClass.available_skills.length > 0) {
+                        <div class="class-skills">
+                          <h4>Available Skills</h4>
+                          <div class="skills-display">
+                            @for (skill of characterClass.available_skills.slice(0, 3); track skill) {
+                              <span class="skill-chip">{{ skill }}</span>
+                            }
+                            @if (characterClass.available_skills.length > 3) {
+                              <span class="more-skills">+{{ characterClass.available_skills.length - 3 }} more</span>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- Summary Stats -->
+              <div class="classes-summary">
+                <div class="summary-item">
+                  <mat-icon>school</mat-icon>
+                  <span>{{ characterClasses().length }} Total Classes</span>
+                </div>
+                <div class="summary-item">
+                  <mat-icon>tune</mat-icon>
+                  <span>{{ dynamicAttributes().length }} Available Attributes</span>
+                </div>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </section>
+    </div>
+  }
+</div>

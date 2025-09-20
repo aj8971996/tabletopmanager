@@ -1,4 +1,4 @@
-<!-- admin-panel.html -->
+<!-- admin-panel.html - Updated with progressive disclosure -->
 <div class="admin-panel-container">
   <!-- Top Toolbar -->
   <mat-toolbar color="primary" class="admin-toolbar">
@@ -15,7 +15,16 @@
 
     <span class="toolbar-spacer"></span>
 
-    <!-- Refresh button for stats -->
+    <!-- Setup Progress Indicator -->
+    @if (setupProgress().completedSteps < setupProgress().totalSteps) {
+      <div class="setup-progress-toolbar">
+        <span class="progress-label">Setup: {{ getSetupCompletion() }}%</span>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="getSetupCompletion()"></div>
+        </div>
+      </div>
+    }
+
     <button mat-icon-button (click)="refreshStats()" [disabled]="isStatsLoading()" class="refresh-button" matTooltip="Refresh Statistics">
       @if (isStatsLoading()) {
         <mat-spinner diameter="20"></mat-spinner>
@@ -29,24 +38,24 @@
     </button>
 
     <mat-menu #quickActionsMenu="matMenu" class="quick-actions-menu">
-      <button mat-menu-item (click)="onQuickAction('add_content')">
-        <mat-icon>library_books</mat-icon>
-        <span>Add Content Page</span>
-      </button>
-      <button mat-menu-item (click)="onQuickAction('add_npc')">
-        <mat-icon>person_add</mat-icon>
-        <span>Create NPC</span>
-      </button>
       <button mat-menu-item (click)="onQuickAction('add_attribute')">
         <mat-icon>tune</mat-icon>
-        <span>Add Custom Attribute</span>
+        <span>Add Attribute</span>
       </button>
-      <button mat-menu-item (click)="onQuickAction('add_tracker')">
-        <mat-icon>track_changes</mat-icon>
-        <span>Create Tracker</span>
+      <button mat-menu-item (click)="onQuickAction('add_class')" [disabled]="!setupProgress().hasAttributes">
+        <mat-icon>school</mat-icon>
+        <span>Add Character Class</span>
+      </button>
+      <button mat-menu-item (click)="onQuickAction('add_content')">
+        <mat-icon>library_books</mat-icon>
+        <span>Add Content</span>
+      </button>
+      <button mat-menu-item (click)="onQuickAction('add_character')" [disabled]="!setupProgress().hasAttributes">
+        <mat-icon>person_add</mat-icon>
+        <span>Create Character</span>
       </button>
       <mat-divider></mat-divider>
-      <button mat-menu-item (click)="onQuickAction('invite_player')">
+      <button mat-menu-item (click)="onQuickAction('invite_player')" [disabled]="!setupProgress().hasAttributes || !setupProgress().hasCharacterClasses">
         <mat-icon>person_add</mat-icon>
         <span>Invite Player</span>
       </button>
@@ -59,26 +68,57 @@
     <mat-sidenav-container class="admin-sidenav-container">
       <mat-sidenav opened mode="side" class="admin-sidenav">
         <nav class="admin-nav">
-          @for (section of adminSections; track section.id) {
+          @for (section of adminSections(); track section.id) {
             <button 
               mat-button 
               class="nav-item"
               [class.active]="activeTab() === section.id"
-              (click)="onSectionSelect(section)">
+              [class.locked]="!section.isAvailable"
+              [disabled]="!section.isAvailable"
+              (click)="onSectionSelect(section)"
+              [matTooltip]="!section.isAvailable ? section.lockedMessage : ''">
               
               <div class="nav-item-content">
                 <div class="nav-item-header">
-                  <mat-icon>{{ section.icon }}</mat-icon>
+                  <div class="nav-icon-wrapper">
+                    <mat-icon>{{ section.icon }}</mat-icon>
+                    @if (!section.isAvailable) {
+                      <mat-icon class="lock-icon">lock</mat-icon>
+                    }
+                  </div>
                   <span class="nav-label">{{ section.label }}</span>
-                  @if (section.badge && section.badge > 0) {
-                    <span class="nav-badge" [matBadge]="section.badge" matBadgeColor="accent"></span>
+                  @if (section.badge && section.badge > 0 && section.isAvailable) {
+                    <span class="nav-badge">{{ section.badge }}</span>
+                  }
+                  @if (section.setupStep && section.setupStep <= setupProgress().completedSteps + 1) {
+                    <span class="setup-step">{{ section.setupStep }}</span>
                   }
                 </div>
-                <div class="nav-description">{{ section.description }}</div>
+                <div class="nav-description" [class.muted]="!section.isAvailable">
+                  {{ section.isAvailable ? section.description : section.lockedMessage }}
+                </div>
               </div>
             </button>
           }
         </nav>
+        
+        <!-- Setup Helper -->
+        @if (setupProgress().completedSteps < setupProgress().totalSteps && nextSetupStep()) {
+          <div class="setup-helper">
+            <div class="helper-header">
+              <mat-icon>lightbulb</mat-icon>
+              <span>Next Step</span>
+            </div>
+            <div class="helper-content">
+              <h4>{{ nextSetupStep()!.title }}</h4>
+              <p>{{ nextSetupStep()!.description }}</p>
+              <button mat-raised-button color="accent" (click)="onNextSetupStep()" class="next-step-button">
+                <mat-icon>{{ nextSetupStep()!.icon }}</mat-icon>
+                <span>Continue Setup</span>
+              </button>
+            </div>
+          </div>
+        }
       </mat-sidenav>
 
       <!-- Main Content Panel -->
@@ -90,15 +130,56 @@
               <h2>Game Space Overview</h2>
               <p>{{ getGameSpaceDescription() }}</p>
               
-              <!-- Setup Progress -->
-              @if (hasStatsData()) {
-                <div class="setup-progress">
-                  <span class="progress-label">Setup Progress: {{ getSetupCompletion() }}%</span>
-                  <div class="progress-indicator">
-                    <div class="progress-fill" [style.width.%]="getSetupCompletion()"></div>
+              <!-- Enhanced Setup Progress -->
+              <div class="setup-progress-card">
+                <div class="progress-header">
+                  <mat-icon [class.complete]="getSetupCompletion() === 100">
+                    {{ getSetupCompletion() === 100 ? 'check_circle' : 'settings' }}
+                  </mat-icon>
+                  <div class="progress-info">
+                    <span class="progress-title">
+                      {{ getSetupCompletion() === 100 ? 'Setup Complete!' : 'Setup Progress' }}
+                    </span>
+                    <span class="progress-subtitle">{{ setupProgress().completedSteps }} of {{ setupProgress().totalSteps }} steps completed</span>
+                  </div>
+                  <span class="progress-percentage">{{ getSetupCompletion() }}%</span>
+                </div>
+                <div class="progress-indicator">
+                  <div class="progress-fill" [style.width.%]="getSetupCompletion()"></div>
+                </div>
+                
+                <!-- Setup Checklist -->
+                <div class="setup-checklist">
+                  <div class="checklist-item" [class.completed]="setupProgress().hasAttributes">
+                    <mat-icon>{{ setupProgress().hasAttributes ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+                    <span>Character Attributes Defined</span>
+                    @if (setupProgress().hasAttributes) {
+                      <span class="item-count">({{ dynamicAttributes().length }})</span>
+                    }
+                  </div>
+                  <div class="checklist-item" [class.completed]="setupProgress().hasCharacterClasses" [class.locked]="!setupProgress().hasAttributes">
+                    <mat-icon>{{ setupProgress().hasCharacterClasses ? 'check_circle' : (setupProgress().hasAttributes ? 'radio_button_unchecked' : 'lock') }}</mat-icon>
+                    <span>Character Classes Created</span>
+                    @if (setupProgress().hasCharacterClasses) {
+                      <span class="item-count">({{ characterClasses().length }})</span>
+                    }
+                  </div>
+                  <div class="checklist-item" [class.completed]="setupProgress().hasContent">
+                    <mat-icon>{{ setupProgress().hasContent ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+                    <span>Game Content Added</span>
+                    @if (setupProgress().hasContent) {
+                      <span class="item-count">({{ textSections().length }})</span>
+                    }
+                  </div>
+                  <div class="checklist-item" [class.completed]="setupProgress().hasMembers" [class.locked]="!setupProgress().hasAttributes || !setupProgress().hasCharacterClasses">
+                    <mat-icon>{{ setupProgress().hasMembers ? 'check_circle' : (!setupProgress().hasAttributes || !setupProgress().hasCharacterClasses ? 'lock' : 'radio_button_unchecked') }}</mat-icon>
+                    <span>Players Invited</span>
+                    @if (setupProgress().hasMembers) {
+                      <span class="item-count">({{ getQuickStats().totalMembers || 1 }})</span>
+                    }
                   </div>
                 </div>
-              }
+              </div>
             </div>
 
             <!-- Loading State -->
@@ -109,54 +190,43 @@
               </div>
             }
 
-            <!-- Error State -->
-            @if (error() && !hasStatsData()) {
-              <div class="error-state">
-                <mat-icon>error_outline</mat-icon>
-                <h3>Unable to Load Statistics</h3>
-                <p>{{ error() }}</p>
-                <button mat-raised-button color="primary" (click)="refreshStats()">
-                  <mat-icon>refresh</mat-icon>
-                  <span>Try Again</span>
-                </button>
-              </div>
-            }
-
-            <!-- Quick Stats Cards -->
-            @if (hasStatsData() || !isStatsLoading()) {
+            <!-- Quick Stats Cards (only show if setup is progressing) -->
+            @if (hasStatsData() && setupProgress().hasAttributes) {
               <div class="stats-grid">
+                <mat-card class="stat-card" [class.primary]="setupProgress().hasAttributes">
+                  <mat-card-content>
+                    <div class="stat-icon">
+                      <mat-icon>tune</mat-icon>
+                    </div>
+                    <div class="stat-details">
+                      <div class="stat-number">{{ getQuickStats().customAttributes }}</div>
+                      <div class="stat-label">Character Attributes</div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                @if (setupProgress().hasCharacterClasses) {
+                  <mat-card class="stat-card primary">
+                    <mat-card-content>
+                      <div class="stat-icon">
+                        <mat-icon>school</mat-icon>
+                      </div>
+                      <div class="stat-details">
+                        <div class="stat-number">{{ characterClasses().length }}</div>
+                        <div class="stat-label">Character Classes</div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                }
+
                 <mat-card class="stat-card">
                   <mat-card-content>
                     <div class="stat-icon">
                       <mat-icon>groups</mat-icon>
                     </div>
                     <div class="stat-details">
-                      <div class="stat-number">
-                        @if (isStatsLoading()) {
-                          <mat-spinner diameter="16"></mat-spinner>
-                        } @else {
-                          {{ getQuickStats().playerCharacters }}
-                        }
-                      </div>
-                      <div class="stat-label">Player Characters</div>
-                    </div>
-                  </mat-card-content>
-                </mat-card>
-
-                <mat-card class="stat-card">
-                  <mat-card-content>
-                    <div class="stat-icon">
-                      <mat-icon>face</mat-icon>
-                    </div>
-                    <div class="stat-details">
-                      <div class="stat-number">
-                        @if (isStatsLoading()) {
-                          <mat-spinner diameter="16"></mat-spinner>
-                        } @else {
-                          {{ getQuickStats().npcs }}
-                        }
-                      </div>
-                      <div class="stat-label">NPCs</div>
+                      <div class="stat-number">{{ getTotalCharacters() }}</div>
+                      <div class="stat-label">Total Characters</div>
                     </div>
                   </mat-card-content>
                 </mat-card>
@@ -167,157 +237,79 @@
                       <mat-icon>library_books</mat-icon>
                     </div>
                     <div class="stat-details">
-                      <div class="stat-number">
-                        @if (isStatsLoading()) {
-                          <mat-spinner diameter="16"></mat-spinner>
-                        } @else {
-                          {{ getQuickStats().contentPages }}
-                        }
-                      </div>
+                      <div class="stat-number">{{ getQuickStats().contentPages }}</div>
                       <div class="stat-label">Content Pages</div>
                     </div>
                   </mat-card-content>
                 </mat-card>
-
-                <mat-card class="stat-card">
-                  <mat-card-content>
-                    <div class="stat-icon">
-                      <mat-icon>tune</mat-icon>
-                    </div>
-                    <div class="stat-details">
-                      <div class="stat-number">
-                        @if (isStatsLoading()) {
-                          <mat-spinner diameter="16"></mat-spinner>
-                        } @else {
-                          {{ getQuickStats().customAttributes }}
-                        }
-                      </div>
-                      <div class="stat-label">Custom Attributes</div>
-                    </div>
-                  </mat-card-content>
-                </mat-card>
-
-                <mat-card class="stat-card">
-                  <mat-card-content>
-                    <div class="stat-icon">
-                      <mat-icon>track_changes</mat-icon>
-                    </div>
-                    <div class="stat-details">
-                      <div class="stat-number">
-                        @if (isStatsLoading()) {
-                          <mat-spinner diameter="16"></mat-spinner>
-                        } @else {
-                          {{ getQuickStats().activeTrackers }}
-                        }
-                      </div>
-                      <div class="stat-label">Active Trackers</div>
-                    </div>
-                  </mat-card-content>
-                </mat-card>
-
-                <!-- Additional Summary Card -->
-                <mat-card class="stat-card summary-card">
-                  <mat-card-content>
-                    <div class="stat-icon">
-                      <mat-icon>summarize</mat-icon>
-                    </div>
-                    <div class="stat-details">
-                      <div class="stat-number">
-                        @if (isStatsLoading()) {
-                          <mat-spinner diameter="16"></mat-spinner>
-                        } @else {
-                          {{ getTotalCharacters() }}
-                        }
-                      </div>
-                      <div class="stat-label">Total Characters</div>
-                      <div class="stat-sublabel">{{ getLastActivity() }}</div>
-                    </div>
-                  </mat-card-content>
-                </mat-card>
               </div>
             }
 
-            <!-- Quick Actions -->
-            @if (hasStatsData() || !isStatsLoading()) {
-              <div class="quick-actions-section">
-                <h3>Quick Actions</h3>
-                <div class="quick-actions-grid">
-                  <button mat-raised-button color="primary" (click)="onQuickAction('add_content')">
-                    <mat-icon>library_books</mat-icon>
-                    <span>Add Content</span>
-                  </button>
-                  <button mat-raised-button color="primary" (click)="onQuickAction('add_npc')">
-                    <mat-icon>person_add</mat-icon>
-                    <span>Create NPC</span>
-                  </button>
-                  <button mat-raised-button color="primary" (click)="onQuickAction('add_attribute')">
-                    <mat-icon>tune</mat-icon>
-                    <span>Add Attribute</span>
-                  </button>
-                  <button mat-raised-button color="primary" (click)="onQuickAction('invite_player')">
-                    <mat-icon>person_add</mat-icon>
-                    <span>Invite Player</span>
-                  </button>
-                </div>
+            <!-- Next Steps Section -->
+            @if (nextSetupStep()) {
+              <div class="next-steps-section">
+                <h3>Continue Setup</h3>
+                <mat-card class="next-step-card prominent">
+                  <mat-card-content>
+                    <div class="step-icon">
+                      <mat-icon>{{ nextSetupStep()!.icon }}</mat-icon>
+                    </div>
+                    <div class="step-content">
+                      <h4>{{ nextSetupStep()!.title }}</h4>
+                      <p>{{ nextSetupStep()!.description }}</p>
+                      <button mat-raised-button color="primary" (click)="onNextSetupStep()">
+                        Continue Setup
+                      </button>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
               </div>
-
-              <!-- Next Steps Suggestions -->
-              @if (hasStatsData() && getSetupCompletion() < 100) {
-                <div class="next-steps-section">
-                  <h3>Suggested Next Steps</h3>
-                  <div class="next-steps-list">
-                    @if (getQuickStats().customAttributes === 0) {
-                      <mat-card class="next-step-card">
-                        <mat-card-content>
-                          <mat-icon>tune</mat-icon>
-                          <div class="step-content">
-                            <h4>Set Up Character Attributes</h4>
-                            <p>Define the core stats your characters will use (Strength, Intelligence, etc.)</p>
-                            <button mat-button color="primary" (click)="onQuickAction('add_attribute')">
-                              Get Started
-                            </button>
-                          </div>
-                        </mat-card-content>
-                      </mat-card>
-                    }
-
-                    @if (getTotalCharacters() === 0) {
-                      <mat-card class="next-step-card">
-                        <mat-card-content>
-                          <mat-icon>person_add</mat-icon>
-                          <div class="step-content">
-                            <h4>Create Your First Characters</h4>
-                            <p>Add NPCs or invite players to create their characters</p>
-                            <button mat-button color="primary" (click)="onQuickAction('add_npc')">
-                              Create NPC
-                            </button>
-                          </div>
-                        </mat-card-content>
-                      </mat-card>
-                    }
-
-                    @if (getQuickStats().contentPages === 0) {
-                      <mat-card class="next-step-card">
-                        <mat-card-content>
-                          <mat-icon>library_books</mat-icon>
-                          <div class="step-content">
-                            <h4>Add Game Content</h4>
-                            <p>Create rules, lore, and world information for your players</p>
-                            <button mat-button color="primary" (click)="onQuickAction('add_content')">
-                              Add Content
-                            </button>
-                          </div>
-                        </mat-card-content>
-                      </mat-card>
-                    }
-                  </div>
-                </div>
-              }
+            } @else {
+              <!-- Setup Complete -->
+              <div class="setup-complete-section">
+                <mat-card class="complete-card">
+                  <mat-card-content>
+                    <div class="complete-icon">
+                      <mat-icon>celebration</mat-icon>
+                    </div>
+                    <div class="complete-content">
+                      <h3>Setup Complete!</h3>
+                      <p>Your game space is ready for players. You can now manage characters, add content, and run sessions.</p>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
             }
           </div>
         }
 
-        <!-- Content Library Section -->
+        <!-- Attributes Section -->
+        @if (activeTab() === 'attributes') {
+          <div class="content-section">
+            <app-attribute-manager></app-attribute-manager>
+          </div>
+        }
+
+        <!-- Character Classes Section -->
+        @if (activeTab() === 'character-classes') {
+          <div class="content-section">
+            @if (setupProgress().hasAttributes) {
+              <app-character-class-manager></app-character-class-manager>
+            } @else {
+              <div class="locked-section">
+                <mat-icon>lock</mat-icon>
+                <h3>Character Classes Locked</h3>
+                <p>You need to create at least one character attribute before you can define character classes.</p>
+                <button mat-raised-button color="primary" (click)="onQuickAction('add_attribute')">
+                  <mat-icon>tune</mat-icon>
+                  Create Attributes First
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Other Sections -->
         @if (activeTab() === 'content') {
           <div class="content-section">
             <div class="section-header">
@@ -333,75 +325,118 @@
           </div>
         }
 
-        <!-- Characters Section -->
         @if (activeTab() === 'characters') {
           <div class="content-section">
-            <div class="section-header">
-              <h2>Character Management</h2>
-              <p>Create and manage NPCs, view player characters</p>
-            </div>
-            
-            <div class="coming-soon">
-              <mat-icon>groups</mat-icon>
-              <h3>Character Management</h3>
-              <p>NPC creation and player character overview coming soon!</p>
-            </div>
+            @if (setupProgress().hasAttributes) {
+              <div class="section-header">
+                <h2>Character Management</h2>
+                <p>Create and manage NPCs, view player characters</p>
+              </div>
+              
+              <div class="coming-soon">
+                <mat-icon>groups</mat-icon>
+                <h3>Character Management</h3>
+                <p>NPC creation and player character overview coming soon!</p>
+              </div>
+            } @else {
+              <div class="locked-section">
+                <mat-icon>lock</mat-icon>
+                <h3>Character Management Locked</h3>
+                <p>Create character attributes first to define what makes up a character.</p>
+                <button mat-raised-button color="primary" (click)="onQuickAction('add_attribute')">
+                  <mat-icon>tune</mat-icon>
+                  Create Attributes First
+                </button>
+              </div>
+            }
           </div>
         }
 
-        <!-- Custom Attributes Section - NOW FUNCTIONAL! -->
-        @if (activeTab() === 'attributes') {
-          <div class="content-section">
-            <!-- Load the actual attribute manager component -->
-            <app-attribute-manager></app-attribute-manager>
-          </div>
-        }
-
-        <!-- Custom Trackers Section -->
         @if (activeTab() === 'trackers') {
           <div class="content-section">
-            <div class="section-header">
-              <h2>Custom Trackers</h2>
-              <p>Create token and slide-based progress tracking systems</p>
-            </div>
-            
-            <div class="coming-soon">
-              <mat-icon>track_changes</mat-icon>
-              <h3>Tracker System</h3>
-              <p>Token and slide tracker creation coming soon!</p>
-            </div>
+            @if (setupProgress().hasAttributes) {
+              <div class="section-header">
+                <h2>Custom Trackers</h2>
+                <p>Create token and slide-based progress tracking systems</p>
+              </div>
+              
+              <div class="coming-soon">
+                <mat-icon>track_changes</mat-icon>
+                <h3>Tracker System</h3>
+                <p>Token and slide tracker creation coming soon!</p>
+              </div>
+            } @else {
+              <div class="locked-section">
+                <mat-icon>lock</mat-icon>
+                <h3>Custom Trackers Locked</h3>
+                <p>Set up character attributes first to create meaningful trackers.</p>
+                <button mat-raised-button color="primary" (click)="onQuickAction('add_attribute')">
+                  <mat-icon>tune</mat-icon>
+                  Create Attributes First
+                </button>
+              </div>
+            }
           </div>
         }
 
-        <!-- Members Section -->
         @if (activeTab() === 'members') {
           <div class="content-section">
-            <div class="section-header">
-              <h2>Member Management</h2>
-              <p>Manage players, permissions, and invitations</p>
-            </div>
-            
-            <div class="coming-soon">
-              <mat-icon>people</mat-icon>
-              <h3>Member Management</h3>
-              <p>Player invitation and permission management coming soon!</p>
-            </div>
+            @if (setupProgress().hasAttributes && setupProgress().hasCharacterClasses) {
+              <div class="section-header">
+                <h2>Member Management</h2>
+                <p>Manage players, permissions, and invitations</p>
+              </div>
+              
+              <div class="coming-soon">
+                <mat-icon>people</mat-icon>
+                <h3>Member Management</h3>
+                <p>Player invitation and permission management coming soon!</p>
+              </div>
+            } @else {
+              <div class="locked-section">
+                <mat-icon>lock</mat-icon>
+                <h3>Member Management Locked</h3>
+                <p>Complete basic setup first: create attributes and character classes so players know what they can create.</p>
+                @if (!setupProgress().hasAttributes) {
+                  <button mat-raised-button color="primary" (click)="onQuickAction('add_attribute')">
+                    <mat-icon>tune</mat-icon>
+                    Create Attributes First
+                  </button>
+                } @else if (!setupProgress().hasCharacterClasses) {
+                  <button mat-raised-button color="primary" (click)="onQuickAction('add_class')">
+                    <mat-icon>school</mat-icon>
+                    Create Character Classes
+                  </button>
+                }
+              </div>
+            }
           </div>
         }
 
-        <!-- Settings Section -->
         @if (activeTab() === 'settings') {
           <div class="content-section">
-            <div class="section-header">
-              <h2>Game Space Settings</h2>
-              <p>Configure game options, rules, and system preferences</p>
-            </div>
-            
-            <div class="coming-soon">
-              <mat-icon>settings</mat-icon>
-              <h3>Settings Management</h3>
-              <p>Advanced game space configuration coming soon!</p>
-            </div>
+            @if (setupProgress().hasAttributes) {
+              <div class="section-header">
+                <h2>Game Space Settings</h2>
+                <p>Configure game options, rules, and system preferences</p>
+              </div>
+              
+              <div class="coming-soon">
+                <mat-icon>settings</mat-icon>
+                <h3>Settings Management</h3>
+                <p>Advanced game space configuration coming soon!</p>
+              </div>
+            } @else {
+              <div class="locked-section">
+                <mat-icon>lock</mat-icon>
+                <h3>Settings Locked</h3>
+                <p>Define core attributes first before configuring advanced settings.</p>
+                <button mat-raised-button color="primary" (click)="onQuickAction('add_attribute')">
+                  <mat-icon>tune</mat-icon>
+                  Create Attributes First
+                </button>
+              </div>
+            }
           </div>
         }
       </mat-sidenav-content>
