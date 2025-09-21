@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ContentLibrary } from './content-library';
+import { ContentManager } from './content-manager';
 
-describe('ContentLibrary', () => {
-  let component: ContentLibrary;
-  let fixture: ComponentFixture<ContentLibrary>;
+describe('ContentManager', () => {
+  let component: ContentManager;
+  let fixture: ComponentFixture<ContentManager>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ContentLibrary]
+      imports: [ContentManager]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(ContentLibrary);
+    fixture = TestBed.createComponent(ContentManager);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

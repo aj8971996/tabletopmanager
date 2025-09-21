@@ -1,3 +1,4 @@
+// content.model.ts - Updated with complete interfaces
 export interface TextSection {
   id: string;
   game_space_id: string;
@@ -8,6 +9,14 @@ export interface TextSection {
   is_public: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface CreateTextSectionRequest {
+  title: string;
+  content?: string;
+  section_type?: 'rules' | 'lore' | 'general' | 'custom';
+  order_index?: number;
+  is_public?: boolean;
 }
 
 export interface Skill {

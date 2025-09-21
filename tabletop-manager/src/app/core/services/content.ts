@@ -1,3 +1,4 @@
+// content.ts - Updated with complete text section CRUD operations
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { SupabaseService } from '../../core/services/supabase';
 import { 
@@ -19,6 +20,14 @@ interface CreateCharacterClassRequest {
   base_stats: Record<string, number>;
   available_skills?: string[];
   special_abilities?: Record<string, any>;
+}
+
+interface CreateTextSectionRequest {
+  title: string;
+  content?: string;
+  section_type?: 'rules' | 'lore' | 'general' | 'custom';
+  order_index?: number;
+  is_public?: boolean;
 }
 
 @Injectable({
@@ -52,8 +61,10 @@ export class ContentService {
     this.dynamicAttributesSignal().filter(attr => attr.is_core_stat)
   );
 
-  // Text Sections operations
+  // Text Sections operations - COMPLETE CRUD
   async loadTextSections(gameSpaceId: string): Promise<void> {
+    this.loadingSignal.set(true);
+
     try {
       const { data, error } = await this.supabaseService.client
         .from('text_sections')
@@ -69,6 +80,137 @@ export class ContentService {
       this.textSectionsSignal.set(data || []);
     } catch (error) {
       console.error('Error in loadTextSections:', error);
+    } finally {
+      this.loadingSignal.set(false);
+    }
+  }
+
+  async createTextSection(gameSpaceId: string, request: CreateTextSectionRequest): Promise<TextSection | null> {
+    try {
+      const textSectionData = {
+        ...request,
+        game_space_id: gameSpaceId,
+        section_type: request.section_type || 'general',
+        order_index: request.order_index ?? 0,
+        is_public: request.is_public ?? true
+      };
+
+      const { data, error } = await this.supabaseService.client
+        .from('text_sections')
+        .insert([textSectionData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating text section:', error);
+        return null;
+      }
+
+      // Refresh the text sections list
+      await this.loadTextSections(gameSpaceId);
+      return data;
+    } catch (error) {
+      console.error('Error in createTextSection:', error);
+      return null;
+    }
+  }
+
+  async updateTextSection(sectionId: string, updates: Partial<TextSection>): Promise<TextSection | null> {
+    try {
+      const { data, error } = await this.supabaseService.client
+        .from('text_sections')
+        .update(updates)
+        .eq('id', sectionId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating text section:', error);
+        return null;
+      }
+
+      // Update the text sections list
+      const sections = this.textSectionsSignal();
+      const updatedSections = sections.map(section => 
+        section.id === sectionId ? data : section
+      );
+      this.textSectionsSignal.set(updatedSections);
+
+      return data;
+    } catch (error) {
+      console.error('Error in updateTextSection:', error);
+      return null;
+    }
+  }
+
+  async deleteTextSection(sectionId: string, gameSpaceId: string): Promise<boolean> {
+    try {
+      const { error } = await this.supabaseService.client
+        .from('text_sections')
+        .delete()
+        .eq('id', sectionId);
+
+      if (error) {
+        console.error('Error deleting text section:', error);
+        return false;
+      }
+
+      // Refresh the text sections list
+      await this.loadTextSections(gameSpaceId);
+      return true;
+    } catch (error) {
+      console.error('Error in deleteTextSection:', error);
+      return false;
+    }
+  }
+
+  // Bulk operations for text sections
+  async reorderTextSections(gameSpaceId: string, sectionIds: string[]): Promise<boolean> {
+    try {
+      // Update order_index for each section based on its position in the array
+      const updates = sectionIds.map((sectionId, index) => ({
+        id: sectionId,
+        order_index: index
+      }));
+
+      for (const update of updates) {
+        await this.updateTextSection(update.id, { order_index: update.order_index });
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error reordering text sections:', error);
+      return false;
+    }
+  }
+
+  async duplicateTextSection(sectionId: string, gameSpaceId: string): Promise<TextSection | null> {
+    try {
+      // Get the original section
+      const { data: originalSection, error: fetchError } = await this.supabaseService.client
+        .from('text_sections')
+        .select('*')
+        .eq('id', sectionId)
+        .single();
+
+      if (fetchError || !originalSection) {
+        console.error('Error fetching original section:', fetchError);
+        return null;
+      }
+
+      // Create a duplicate with modified title
+      const duplicateRequest: CreateTextSectionRequest = {
+        title: `${originalSection.title} (Copy)`,
+        content: originalSection.content,
+        section_type: originalSection.section_type,
+        order_index: originalSection.order_index + 1,
+        is_public: originalSection.is_public
+      };
+
+      return await this.createTextSection(gameSpaceId, duplicateRequest);
+    } catch (error) {
+      console.error('Error duplicating text section:', error);
+      return null;
     }
   }
 
@@ -443,5 +585,35 @@ export class ContentService {
       this.loadFormulaDependencies(gameSpaceId),
       this.loadCustomSections(gameSpaceId)
     ]);
+  }
+
+  // Search and filter utilities
+  searchTextSections(query: string): TextSection[] {
+    const sections = this.textSectionsSignal();
+    if (!query.trim()) return sections;
+
+    const searchTerm = query.toLowerCase();
+    return sections.filter(section =>
+      section.title.toLowerCase().includes(searchTerm) ||
+      (section.content && section.content.toLowerCase().includes(searchTerm))
+    );
+  }
+
+  getTextSectionsByType(sectionType: 'rules' | 'lore' | 'general' | 'custom'): TextSection[] {
+    return this.textSectionsSignal().filter(section => section.section_type === sectionType);
+  }
+
+  // Content statistics
+  getContentStatistics() {
+    const sections = this.textSectionsSignal();
+    return {
+      total: sections.length,
+      rules: sections.filter(s => s.section_type === 'rules').length,
+      lore: sections.filter(s => s.section_type === 'lore').length,
+      general: sections.filter(s => s.section_type === 'general').length,
+      custom: sections.filter(s => s.section_type === 'custom').length,
+      public: sections.filter(s => s.is_public).length,
+      private: sections.filter(s => !s.is_public).length
+    };
   }
 }

@@ -1,4 +1,4 @@
-// admin-panel.ts - Updated with progressive disclosure logic
+// admin-panel.ts - Updated with content manager integration
 import { Component, inject, OnInit, ChangeDetectionStrategy, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -22,6 +22,7 @@ import { ContentService } from '../../../core/services/content';
 import { GameSpace } from '../../../shared/models';
 import { AttributeManagerComponent } from '../attribute-manager/attribute-manager';
 import { CharacterClassManagerComponent } from '../character-class-manager/character-class-manager';
+import { ContentManagerComponent } from '../content-manager/content-manager';
 
 interface AdminSection {
   id: string;
@@ -67,7 +68,8 @@ interface SetupProgress {
     MatSnackBarModule,
     MatTooltipModule,
     AttributeManagerComponent,
-    CharacterClassManagerComponent
+    CharacterClassManagerComponent,
+    ContentManagerComponent  // Added content manager
   ]
 })
 export class AdminPanelComponent implements OnInit {
@@ -234,7 +236,7 @@ export class AdminPanelComponent implements OnInit {
             badge = stats.playerCharacters + stats.npcs;
             break;
           case 'content':
-            badge = stats.contentPages;
+            badge = this.textSections().length; // Updated to use actual text sections count
             break;
           case 'trackers':
             badge = stats.activeTrackers;
@@ -455,7 +457,7 @@ export class AdminPanelComponent implements OnInit {
     return {
       playerCharacters: stats.playerCharacters,
       npcs: stats.npcs,
-      contentPages: stats.contentPages,
+      contentPages: this.textSections().length, // Use actual text sections count
       customAttributes: stats.customAttributes,
       activeTrackers: stats.activeTrackers,
       totalMembers: stats.totalMembers

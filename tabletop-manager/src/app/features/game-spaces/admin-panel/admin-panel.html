@@ -1,4 +1,4 @@
-<!-- admin-panel.html - Updated with progressive disclosure -->
+<!-- admin-panel.html - Updated with content manager integration -->
 <div class="admin-panel-container">
   <!-- Top Toolbar -->
   <mat-toolbar color="primary" class="admin-toolbar">
@@ -231,14 +231,14 @@
                   </mat-card-content>
                 </mat-card>
 
-                <mat-card class="stat-card">
+                <mat-card class="stat-card" [class.primary]="setupProgress().hasContent">
                   <mat-card-content>
                     <div class="stat-icon">
                       <mat-icon>library_books</mat-icon>
                     </div>
                     <div class="stat-details">
-                      <div class="stat-number">{{ getQuickStats().contentPages }}</div>
-                      <div class="stat-label">Content Pages</div>
+                      <div class="stat-number">{{ textSections().length }}</div>
+                      <div class="stat-label">Content Sections</div>
                     </div>
                   </mat-card-content>
                 </mat-card>
@@ -309,22 +309,14 @@
           </div>
         }
 
-        <!-- Other Sections -->
+        <!-- Content Section - UPDATED: Now using actual content manager -->
         @if (activeTab() === 'content') {
-          <div class="content-section">
-            <div class="section-header">
-              <h2>Content Library</h2>
-              <p>Manage rules, lore, and world information for your game</p>
-            </div>
-            
-            <div class="coming-soon">
-              <mat-icon>library_books</mat-icon>
-              <h3>Content Management</h3>
-              <p>Rich text editor for rules, lore, and world-building content coming soon!</p>
-            </div>
+          <div class="content-section content-manager-section">
+            <app-content-manager></app-content-manager>
           </div>
         }
 
+        <!-- Other Sections -->
         @if (activeTab() === 'characters') {
           <div class="content-section">
             @if (setupProgress().hasAttributes) {

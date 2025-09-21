@@ -1,0 +1,316 @@
+<!-- content-manager.html - Fixed template errors -->
+<div class="content-manager-container">
+  <!-- Header Section -->
+  <div class="content-header">
+    <div class="header-info">
+      <h2>Content Library</h2>
+      <p>Manage rules, lore, and world information for your game space</p>
+    </div>
+    
+    <!-- Content Statistics -->
+    <div class="content-stats">
+      <div class="stat-chip" [class]="'stat-' + selectedCategory()">
+        @if (selectedCategory() === 'all') {
+          <span class="stat-number">{{ contentStats().total }}</span>
+          <span class="stat-label">Total Sections</span>
+        } @else {
+          <span class="stat-number">{{ filteredContent().length }}</span>
+          <span class="stat-label">{{ getCategoryInfo(selectedCategory())?.label || 'Selected' }}</span>
+        }
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="header-actions">
+      <button mat-raised-button color="primary" (click)="onCreateNew()" class="create-button">
+        <mat-icon>add</mat-icon>
+        <span>Create Content</span>
+      </button>
+      
+      <button mat-icon-button [matMenuTriggerFor]="uploadMenu" class="upload-button">
+        <mat-icon>upload_file</mat-icon>
+      </button>
+      
+      <mat-menu #uploadMenu="matMenu" class="upload-menu">
+        <div class="upload-menu-content" (click)="$event.stopPropagation()">
+          <h3>Upload Text File</h3>
+          <form [formGroup]="uploadForm" (ngSubmit)="onUploadFile()">
+            <mat-form-field appearance="outline" class="upload-field">
+              <mat-label>Title</mat-label>
+              <input matInput formControlName="title" placeholder="Content title">
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline" class="upload-field">
+              <mat-label>Category</mat-label>
+              <mat-select formControlName="section_type">
+                @for (category of contentCategories; track category.type) {
+                  <mat-option [value]="category.type">
+                    <mat-icon>{{ category.icon }}</mat-icon>
+                    {{ category.label }}
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            
+            <div class="file-upload-section">
+              <input type="file" 
+                     id="fileInput" 
+                     class="file-input"
+                     accept=".txt,.md,.html,.json"
+                     (change)="onFileSelect($event)">
+              <label for="fileInput" class="file-label">
+                <mat-icon>attach_file</mat-icon>
+                Choose File (.txt, .md)
+              </label>
+            </div>
+            
+            <div class="upload-actions">
+              <button type="button" mat-button (click)="uploadForm.reset()">Cancel</button>
+              <button type="submit" 
+                      mat-raised-button 
+                      color="primary"
+                      [disabled]="!uploadForm.valid || isUploading()">
+                @if (isUploading()) {
+                  <mat-spinner diameter="16"></mat-spinner>
+                } @else {
+                  <mat-icon>upload</mat-icon>
+                }
+                Upload
+              </button>
+            </div>
+          </form>
+        </div>
+      </mat-menu>
+    </div>
+  </div>
+
+  <!-- Filter and Search Section -->
+  <div class="content-filters">
+    <!-- Category Filter - FIXED: Handle MatChipSelectionChange properly -->
+    <div class="category-filter">
+      <mat-chip-listbox class="category-chips" [value]="selectedCategory()" (selectionChange)="onCategorySelect($event)">
+        <mat-chip-option value="all" class="category-chip all">
+          <mat-icon>view_list</mat-icon>
+          All Content ({{ contentStats().total }})
+        </mat-chip-option>
+        @for (category of contentCategories; track category.type) {
+          <mat-chip-option [value]="category.type" class="category-chip" [class]="'chip-' + category.color">
+            <mat-icon>{{ category.icon }}</mat-icon>
+            {{ category.label }} ({{ contentStats()[category.type] }})
+          </mat-chip-option>
+        }
+      </mat-chip-listbox>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-section">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search content</mat-label>
+        <input matInput 
+               [value]="searchTerm()" 
+               (input)="onSearchChange($event)"
+               placeholder="Search titles and content...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="content-main">
+    <!-- Content List -->
+    <div class="content-list">
+      @if (isLoading()) {
+        <div class="loading-state">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Loading content...</p>
+        </div>
+      } @else if (filteredContent().length === 0) {
+        <div class="empty-state">
+          @if (selectedCategory() === 'all' && searchTerm() === '') {
+            <!-- No content at all -->
+            <mat-icon>library_books</mat-icon>
+            <h3>No Content Yet</h3>
+            <p>Start building your game's content library by creating your first section or uploading a text file.</p>
+            <button mat-raised-button color="primary" (click)="onCreateNew()">
+              <mat-icon>add</mat-icon>
+              Create First Section
+            </button>
+          } @else if (searchTerm()) {
+            <!-- No search results - FIXED: Use public method -->
+            <mat-icon>search_off</mat-icon>
+            <h3>No Search Results</h3>
+            <p>No content found matching "{{ searchTerm() }}"</p>
+            <button mat-button (click)="clearSearch()">Clear Search</button>
+          } @else {
+            <!-- No content in category -->
+            <mat-icon>{{ getCategoryInfo(selectedCategory())?.icon || 'folder_open' }}</mat-icon>
+            <h3>No {{ getCategoryInfo(selectedCategory())?.label || 'Content' }}</h3>
+            <p>{{ getCategoryInfo(selectedCategory())?.description || 'No content in this category yet.' }}</p>
+            <button mat-raised-button color="primary" (click)="onCreateNew()">
+              <mat-icon>add</mat-icon>
+              Add {{ getCategoryInfo(selectedCategory())?.label || 'Content' }}
+            </button>
+          }
+        </div>
+      } @else {
+        <!-- Content Cards -->
+        <div class="content-grid" 
+             cdkDropList 
+             (cdkDropListDropped)="onDrop($event)"
+             [cdkDropListDisabled]="searchTerm() !== '' || selectedCategory() === 'all'">
+          @for (item of filteredContent(); track item.id) {
+            <mat-card class="content-card" 
+                     [class.editing]="editingItem()?.id === item.id"
+                     cdkDrag>
+              <mat-card-header>
+                <div class="card-header-content">
+                  <div class="content-info">
+                    <div class="content-category">
+                      <mat-icon class="category-icon" [class]="'icon-' + getCategoryInfo(item.section_type)?.color">
+                        {{ getCategoryInfo(item.section_type)?.icon || 'description' }}
+                      </mat-icon>
+                      <span class="category-label">{{ getCategoryInfo(item.section_type)?.label || item.section_type }}</span>
+                    </div>
+                    <h3 class="content-title">{{ item.title }}</h3>
+                  </div>
+                  
+                  <div class="content-actions">
+                    <button mat-icon-button [matMenuTriggerFor]="itemMenu" class="action-menu-button">
+                      <mat-icon>more_vert</mat-icon>
+                    </button>
+                    
+                    <mat-menu #itemMenu="matMenu">
+                      <button mat-menu-item (click)="onEditItem(item)">
+                        <mat-icon>edit</mat-icon>
+                        <span>Edit</span>
+                      </button>
+                      <button mat-menu-item (click)="onDeleteItem(item)">
+                        <mat-icon>delete</mat-icon>
+                        <span>Delete</span>
+                      </button>
+                      <mat-divider></mat-divider>
+                      <div class="menu-info">
+                        <small>Created: {{ formatDate(item.created_at) }}</small>
+                        @if (item.updated_at !== item.created_at) {
+                          <small>Updated: {{ formatDate(item.updated_at) }}</small>
+                        }
+                      </div>
+                    </mat-menu>
+                  </div>
+                </div>
+              </mat-card-header>
+              
+              <mat-card-content>
+                <div class="content-preview">
+                  {{ getContentPreview(item.content) }}
+                </div>
+                
+                <div class="content-meta">
+                  @if (!item.is_public) {
+                    <mat-chip class="privacy-chip">
+                      <mat-icon>lock</mat-icon>
+                      Private
+                    </mat-chip>
+                  }
+                  
+                  <span class="order-index">Order: {{ item.order_index }}</span>
+                </div>
+              </mat-card-content>
+              
+              <!-- Drag Handle -->
+              @if (searchTerm() === '' && selectedCategory() !== 'all') {
+                <div class="drag-handle" cdkDragHandle>
+                  <mat-icon>drag_indicator</mat-icon>
+                </div>
+              }
+            </mat-card>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Content Editor Panel -->
+    @if (editingItem() !== null || contentForm.dirty) {
+      <div class="content-editor">
+        <mat-card class="editor-card">
+          <mat-card-header>
+            <mat-card-title>
+              {{ editingItem() ? 'Edit Content' : 'Create New Content' }}
+            </mat-card-title>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <form [formGroup]="contentForm" (ngSubmit)="onSaveContent()">
+              <!-- Title and Category -->
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="title-field">
+                  <mat-label>Title</mat-label>
+                  <input matInput formControlName="title" placeholder="Content title">
+                  @if (contentForm.get('title')?.hasError('required')) {
+                    <mat-error>Title is required</mat-error>
+                  }
+                  @if (contentForm.get('title')?.hasError('minlength')) {
+                    <mat-error>Title must be at least 3 characters</mat-error>
+                  }
+                </mat-form-field>
+                
+                <mat-form-field appearance="outline" class="category-field">
+                  <mat-label>Category</mat-label>
+                  <mat-select formControlName="section_type">
+                    @for (category of contentCategories; track category.type) {
+                      <mat-option [value]="category.type">
+                        <mat-icon>{{ category.icon }}</mat-icon>
+                        {{ category.label }}
+                      </mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <!-- Content Editor -->
+              <div class="content-editor-section">
+                <mat-form-field appearance="outline" class="content-field">
+                  <mat-label>Content</mat-label>
+                  <textarea matInput 
+                           formControlName="content" 
+                           placeholder="Enter your content here... (Supports Markdown)"
+                           rows="12"
+                           class="content-textarea"></textarea>
+                </mat-form-field>
+              </div>
+
+              <!-- Settings -->
+              <div class="editor-settings">
+                <mat-form-field appearance="outline" class="order-field">
+                  <mat-label>Display Order</mat-label>
+                  <input matInput 
+                         type="number" 
+                         formControlName="order_index" 
+                         placeholder="0">
+                </mat-form-field>
+                
+                <mat-checkbox formControlName="is_public" class="public-checkbox">
+                  Make this content public to players
+                </mat-checkbox>
+              </div>
+
+              <!-- Actions -->
+              <div class="editor-actions">
+                <button type="button" mat-button (click)="onCancelEdit()">
+                  Cancel
+                </button>
+                <button type="submit" 
+                        mat-raised-button 
+                        color="primary"
+                        [disabled]="!contentForm.valid">
+                  <mat-icon>{{ editingItem() ? 'save' : 'add' }}</mat-icon>
+                  {{ editingItem() ? 'Update' : 'Create' }} Content
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    }
+  </div>
+</div>

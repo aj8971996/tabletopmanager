@@ -42,6 +42,28 @@ export const routes: Routes = [
       {
         path: 'character-classes',
         loadComponent: () => import('../app/features/game-spaces/character-class-manager/character-class-manager').then(m => m.CharacterClassManagerComponent)
+      },
+      // ADDED: Content Manager Route
+      {
+        path: 'content',
+        loadComponent: () => import('../app/features/game-spaces/content-manager/content-manager').then(m => m.ContentManagerComponent)
+      },
+      // ADDED: Placeholder routes for future components
+      {
+        path: 'characters',
+        loadComponent: () => import('../app/features/game-spaces/admin-panel/admin-panel').then(m => m.AdminPanelComponent)
+      },
+      {
+        path: 'trackers',
+        loadComponent: () => import('../app/features/game-spaces/admin-panel/admin-panel').then(m => m.AdminPanelComponent)
+      },
+      {
+        path: 'members',
+        loadComponent: () => import('../app/features/game-spaces/admin-panel/admin-panel').then(m => m.AdminPanelComponent)
+      },
+      {
+        path: 'settings',
+        loadComponent: () => import('../app/features/game-spaces/admin-panel/admin-panel').then(m => m.AdminPanelComponent)
       }
     ]
   },
