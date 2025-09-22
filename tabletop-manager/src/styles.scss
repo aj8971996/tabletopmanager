@@ -286,6 +286,140 @@ mat-icon {
   }
 }
 
+// Add these styles to your styles.scss file to fix menu transparency issues
+
+// Fix Material menu overlays and dropdowns
+.cdk-overlay-container {
+  z-index: 1000;
+}
+
+.cdk-overlay-backdrop {
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.cdk-overlay-pane {
+  z-index: 1001;
+}
+
+// Fix Material menu styling
+.mat-mdc-menu-panel {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-heavy);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+}
+
+.mat-mdc-menu-content {
+  background: var(--color-surface);
+  padding: var(--spacing-xs) 0;
+}
+
+.mat-mdc-menu-item {
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  min-height: 40px;
+  
+  &:hover {
+    background: var(--color-surface-variant) !important;
+  }
+  
+  .mat-icon {
+    color: var(--color-on-surface-variant);
+    margin-right: var(--spacing-sm);
+  }
+}
+
+// Fix select dropdown styling
+.mat-mdc-select-panel {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-heavy);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+}
+
+.mat-mdc-option {
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  
+  &:hover {
+    background: var(--color-surface-variant) !important;
+  }
+  
+  &.mdc-list-item--selected {
+    background: var(--color-primary) !important;
+    color: var(--color-primary-contrast) !important;
+    
+    .mat-icon {
+      color: var(--color-primary-contrast) !important;
+    }
+  }
+  
+  .mat-icon {
+    color: var(--color-on-surface-variant);
+    margin-right: var(--spacing-sm);
+  }
+}
+
+// Fix chip listbox styling
+.mat-mdc-chip-listbox {
+  .mat-mdc-chip {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-on-surface);
+    
+    &:hover {
+      background: var(--color-surface-variant);
+      box-shadow: var(--shadow-light);
+    }
+    
+    &.mdc-evolution-chip--selected {
+      background: var(--color-primary);
+      color: var(--color-primary-contrast);
+      border-color: var(--color-primary);
+      
+      .mat-icon {
+        color: var(--color-primary-contrast);
+      }
+    }
+  }
+}
+
+// Fix snackbar positioning
+.mat-mdc-snack-bar-container {
+  z-index: 1050;
+}
+
+// Fix dialog styling
+.mat-mdc-dialog-container {
+  background: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-heavy);
+  border: 1px solid var(--color-border);
+}
+
+.mat-mdc-dialog-content {
+  color: var(--color-on-surface);
+}
+
+// Fix form field focused state
+.mat-mdc-form-field.mat-focused {
+  .mdc-text-field--focused {
+    .mdc-line-ripple::before {
+      border-bottom-color: var(--color-primary);
+    }
+    
+    .mdc-floating-label {
+      color: var(--color-primary);
+    }
+  }
+  
+  .mdc-text-field--focused .mdc-line-ripple::after {
+    border-bottom-color: var(--color-primary);
+  }
+}
+
 // Snackbar theming
 .mat-mdc-snack-bar-container {
   &.success-snackbar {

@@ -1,0 +1,294 @@
+<!-- content-creator.component.html -->
+<div class="content-creator-container">
+  <!-- Header -->
+  <div class="creator-header">
+    <div class="header-info">
+      <h2>Create New Content</h2>
+      <p>Add new content to your game space library</p>
+    </div>
+    
+    <div class="header-actions">
+      <button mat-button (click)="onCancel()" class="cancel-button">
+        <mat-icon>close</mat-icon>
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Creation Mode Selection -->
+  <div class="mode-selection">
+    <mat-card class="mode-card">
+      <mat-card-content>
+        <h3>How would you like to create content?</h3>
+        
+        <div class="mode-options">
+          <button mat-card 
+                  class="mode-option" 
+                  [class.selected]="creationMode() === 'blank'"
+                  (click)="onModeSelect('blank')">
+            <mat-icon>description</mat-icon>
+            <h4>Start from Blank</h4>
+            <p>Create content from scratch with a clean slate</p>
+          </button>
+          
+          <button mat-card 
+                  class="mode-option" 
+                  [class.selected]="creationMode() === 'template'"
+                  (click)="onModeSelect('template')">
+            <mat-icon>assignment</mat-icon>
+            <h4>Use Template</h4>
+            <p>Start with a pre-built template for common content types</p>
+          </button>
+          
+          <button mat-card 
+                  class="mode-option" 
+                  [class.selected]="creationMode() === 'import'"
+                  (click)="onModeSelect('import')">
+            <mat-icon>upload_file</mat-icon>
+            <h4>Import File</h4>
+            <p>Upload and import content from a text file</p>
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Category Selection -->
+  @if (creationMode() !== null) {
+    <div class="category-selection">
+      <mat-card class="category-card">
+        <mat-card-content>
+          <h3>Content Category</h3>
+          <p>Choose the type of content you're creating</p>
+          
+          <div class="category-grid">
+            @for (category of contentCategories; track category.type) {
+              <button mat-card 
+                      class="category-option" 
+                      [class.selected]="selectedCategory() === category.type"
+                      [class]="'category-' + category.color"
+                      (click)="onCategorySelect(category.type)">
+                <div class="category-header">
+                  <mat-icon>{{ category.icon }}</mat-icon>
+                  <h4>{{ category.label }}</h4>
+                </div>
+                <p>{{ category.description }}</p>
+                <div class="examples">
+                  <small>Examples: {{ category.examples.slice(0, 2).join(', ') }}</small>
+                </div>
+              </button>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Template Selection (if template mode) -->
+  @if (creationMode() === 'template' && selectedCategory()) {
+    <div class="template-selection">
+      <mat-card class="template-card">
+        <mat-card-content>
+          <h3>Choose Template</h3>
+          <p>Select a template for {{ getCategoryInfo(selectedCategory())?.label }}</p>
+          
+          @if (filteredTemplates().length === 0) {
+            <div class="no-templates">
+              <mat-icon>assignment</mat-icon>
+              <h4>No Templates Available</h4>
+              <p>No templates are available for {{ getCategoryInfo(selectedCategory())?.label }}. Try creating from blank instead.</p>
+              <button mat-button (click)="onModeSelect('blank')">Create from Blank</button>
+            </div>
+          } @else {
+            <div class="template-grid">
+              @for (template of filteredTemplates(); track template.id) {
+                <button mat-card 
+                        class="template-option" 
+                        [class.selected]="selectedTemplate()?.id === template.id"
+                        (click)="onTemplateSelect(template)">
+                  <div class="template-header">
+                    <mat-icon>{{ template.icon }}</mat-icon>
+                    <h4>{{ template.name }}</h4>
+                  </div>
+                  <p>{{ template.description }}</p>
+                  <div class="template-info">
+                    <small>{{ template.placeholders.length }} fields to fill</small>
+                  </div>
+                </button>
+              }
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- File Import (if import mode) -->
+  @if (creationMode() === 'import' && selectedCategory()) {
+    <div class="file-import">
+      <mat-card class="import-card">
+        <mat-card-content>
+          <h3>Import File</h3>
+          <p>Upload a text file to import as {{ getCategoryInfo(selectedCategory())?.label }}</p>
+          
+          <div class="file-upload-area">
+            <input type="file" 
+                   id="contentFileInput" 
+                   class="file-input"
+                   accept=".txt,.md,.html"
+                   (change)="onFileSelect($event)">
+            <label for="contentFileInput" class="file-upload-label">
+              <mat-icon>cloud_upload</mat-icon>
+              <h4>Choose File</h4>
+              <p>Select a .txt, .md, or .html file to import</p>
+              <small>Max file size: 5MB</small>
+            </label>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Template Form (if template selected) -->
+  @if (selectedTemplate() && templateForm) {
+    <div class="template-form">
+      <mat-card class="form-card">
+        <mat-card-content>
+          <h3>Fill Template: {{ selectedTemplate()?.name }}</h3>
+          <p>Fill in the information to customize your content</p>
+          
+          <form [formGroup]="templateForm" (ngSubmit)="onTemplateFormChange()">
+            <div class="template-fields">
+              @for (placeholder of selectedTemplate()?.placeholders || []; track placeholder.key) {
+                <mat-form-field appearance="outline" class="template-field">
+                  <mat-label>{{ placeholder.label }}</mat-label>
+                  @if (placeholder.key.includes('description') || placeholder.key.includes('background') || placeholder.key.includes('content')) {
+                    <textarea matInput 
+                             [formControlName]="placeholder.key"
+                             [placeholder]="placeholder.description"
+                             rows="3"
+                             (input)="onTemplateFormChange()"></textarea>
+                  } @else {
+                    <input matInput 
+                           [formControlName]="placeholder.key"
+                           [placeholder]="placeholder.description"
+                           (input)="onTemplateFormChange()">
+                  }
+                  <mat-hint>{{ placeholder.description }}</mat-hint>
+                  @if (templateForm.get(placeholder.key)?.hasError('required')) {
+                    <mat-error>{{ placeholder.label }} is required</mat-error>
+                  }
+                </mat-form-field>
+              }
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Main Content Form -->
+  @if ((creationMode() === 'blank' && selectedCategory()) || 
+       (creationMode() === 'template' && selectedTemplate()) ||
+       (creationMode() === 'import' && selectedCategory())) {
+    <div class="content-form">
+      <mat-card class="form-card">
+        <mat-card-content>
+          <div class="form-header">
+            <h3>Content Details</h3>
+            <div class="form-actions">
+              <button mat-icon-button 
+                      (click)="onPreviewToggle()" 
+                      [class.active]="isPreviewMode()"
+                      matTooltip="Toggle Preview">
+                <mat-icon>{{ isPreviewMode() ? 'edit' : 'preview' }}</mat-icon>
+              </button>
+            </div>
+          </div>
+          
+          <form [formGroup]="contentForm" (ngSubmit)="onSave()">
+            <!-- Title and Settings -->
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="title-field">
+                <mat-label>Content Title</mat-label>
+                <input matInput formControlName="title" placeholder="Enter a descriptive title">
+                @if (contentForm.get('title')?.hasError('required')) {
+                  <mat-error>Title is required</mat-error>
+                }
+                @if (contentForm.get('title')?.hasError('minlength')) {
+                  <mat-error>Title must be at least 3 characters</mat-error>
+                }
+              </mat-form-field>
+              
+              <mat-form-field appearance="outline" class="order-field">
+                <mat-label>Display Order</mat-label>
+                <input matInput 
+                       type="number" 
+                       formControlName="order_index" 
+                       placeholder="0">
+                <mat-hint>Lower numbers appear first</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <!-- Content Editor/Preview -->
+            <div class="content-section">
+              @if (!isPreviewMode()) {
+                <!-- Editor Mode -->
+                <mat-form-field appearance="outline" class="content-field">
+                  <mat-label>Content</mat-label>
+                  <textarea matInput 
+                           formControlName="content" 
+                           placeholder="Enter your content here... (Supports Markdown)"
+                           rows="16"
+                           class="content-textarea"></textarea>
+                  @if (contentForm.get('content')?.hasError('required')) {
+                    <mat-error>Content is required</mat-error>
+                  }
+                  @if (contentForm.get('content')?.hasError('minlength')) {
+                    <mat-error>Content must be at least 10 characters</mat-error>
+                  }
+                </mat-form-field>
+              } @else {
+                <!-- Preview Mode -->
+                <div class="content-preview">
+                  <h4>Preview</h4>
+                  <!-- NEW (temporary fix): -->
+                <div class="preview-content" [innerHTML]="contentForm.get('content')?.value">
+                {{ contentForm.get('content')?.value || 'No content to preview' }}
+                </div>
+                </div>
+              }
+            </div>
+
+            <!-- Settings -->
+            <div class="form-settings">
+              <mat-checkbox formControlName="is_public" class="public-checkbox">
+                <span>Make this content visible to players</span>
+                <small>Players will be able to see this content in their view</small>
+              </mat-checkbox>
+            </div>
+
+            <!-- Actions -->
+            <div class="form-actions-bottom">
+              <button type="button" mat-button (click)="onCancel()">
+                Cancel
+              </button>
+              <button type="submit" 
+                      mat-raised-button 
+                      color="primary"
+                      [disabled]="!contentForm.valid || isSaving()">
+                @if (isSaving()) {
+                  <mat-spinner diameter="16"></mat-spinner>
+                  Creating...
+                } @else {
+                  <mat-icon>save</mat-icon>
+                  Create Content
+                }
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</div>
